@@ -149,6 +149,17 @@ class TradingFlowIT extends AbstractIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void openApiSpecIsPublishedWithTheTradingOperations() throws Exception {
+        mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paths['/api/orders'].post.operationId").value("place"))
+                .andExpect(jsonPath("$.paths['/api/offers/{orderId}/buy'].post").exists())
+                .andExpect(jsonPath("$.paths['/api/stocks/{symbol}/book'].get").exists())
+                .andExpect(jsonPath("$.paths['/api/trades/mine'].get").exists());
+        mvc.perform(get("/swagger-ui.html")).andExpect(status().is3xxRedirection());
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private long place(AuthenticatedUser who, Stock stock, String side, String type, String price, long qty) throws Exception {
