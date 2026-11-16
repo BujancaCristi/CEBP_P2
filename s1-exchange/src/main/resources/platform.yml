@@ -1,0 +1,6 @@
+# PLACEHOLDER - owner: Cezar (platform/). Replace with the real platform configuration.
+# Imported by application.yml; kept here so the import does not fail before Cezar's PR lands.
+exchange:
+  platform:
+    jwt-secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
+    starting-cash: 10000.00

@@ -1,0 +1,21 @@
+# Test profile: datasource + Kafka come from Testcontainers (AbstractIntegrationTest).
+spring:
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+  jpa:
+    show-sql: false
+
+exchange:
+  matching:
+    pending-timeout-seconds: 20
+    sweep-interval-ms: 5000
+
+logging:
+  level:
+    ro.upt.exchange: INFO
+    ro.upt.exchange.s1.ops.NoopIncidentService: WARN
+    org.apache.kafka: ERROR
+    org.springframework.kafka: WARN
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN
