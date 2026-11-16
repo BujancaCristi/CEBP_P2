@@ -1,0 +1,14 @@
+{
+  "eventId": "0b1d9c7e-2a7f-4c7a-9a0e-1f9b7f3d1a01",
+  "type": "PlaceOrder",
+  "occurredAt": "2026-11-16T09:00:00.000Z",
+  "schemaVersion": 1,
+  "payload": {
+    "orderId": 101,
+    "symbol": "ACME",
+    "side": "BUY",
+    "type": "LIMIT",
+    "price": 10.5,
+    "qty": 100
+  }
+}

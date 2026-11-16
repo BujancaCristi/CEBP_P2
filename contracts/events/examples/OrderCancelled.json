@@ -1,0 +1,21 @@
+{
+  "eventId": "7c2f0a44-1b3e-4d55-8e6f-9a0b1c2d3e03",
+  "type": "OrderCancelled",
+  "occurredAt": "2026-11-16T09:00:10.050Z",
+  "schemaVersion": 1,
+  "payload": {
+    "orderId": 101,
+    "userId": 7,
+    "symbol": "ACME",
+    "side": "BUY",
+    "type": "LIMIT",
+    "price": 10.5,
+    "qty": 100,
+    "remainingQty": 40,
+    "status": "CANCELLED",
+    "source": "WEB",
+    "reason": "CANCELLED_BY_USER",
+    "version": 2,
+    "updatedAt": "2026-11-16T09:00:10.050Z"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "eventId": "7c2f0a44-1b3e-4d55-8e6f-9a0b1c2d3e04",
+  "type": "OrderRejected",
+  "occurredAt": "2026-11-16T09:01:00.000Z",
+  "schemaVersion": 1,
+  "payload": {
+    "orderId": 102,
+    "userId": 8,
+    "symbol": "ACME",
+    "side": "BUY",
+    "type": "LIMIT",
+    "price": 10.5,
+    "qty": 100000,
+    "remainingQty": 100000,
+    "status": "REJECTED",
+    "source": "WEB",
+    "reason": "INSUFFICIENT_FUNDS: need 1050000.00 available",
+    "version": 0,
+    "updatedAt": "2026-11-16T09:01:00.000Z"
+  }
+}

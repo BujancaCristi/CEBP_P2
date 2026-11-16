@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exchange.upt.ro/events/schemas/OrderCommand.schema.json",
+  "title": "OrderCommand payload (exchange.order-commands, S1 internal)",
+  "description": "PlaceOrder / ModifyOrder / CancelOrder. The matcher re-reads the order by id, so a replayed command is harmless. For ModifyOrder, price/qty are the requested new values (null = unchanged); for PlaceOrder they are informational copies.",
+  "type": "object",
+  "required": ["orderId", "symbol", "side", "type"],
+  "additionalProperties": false,
+  "properties": {
+    "orderId": { "type": "integer", "minimum": 1 },
+    "symbol": { "type": "string", "maxLength": 10 },
+    "side": { "type": "string", "enum": ["BUY", "SELL"] },
+    "type": { "type": "string", "enum": ["LIMIT", "MARKET"] },
+    "price": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+    "qty": { "type": ["integer", "null"], "minimum": 1 }
+  }
+}

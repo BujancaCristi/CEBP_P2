@@ -1,0 +1,4 @@
+# PLACEHOLDER - owner: Paul (ops/). Replace with the real ops configuration.
+# Imported by application.yml; kept here so the import does not fail before Paul's PR lands.
+exchange:
+  ops: {}

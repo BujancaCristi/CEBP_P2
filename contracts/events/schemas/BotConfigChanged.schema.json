@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exchange.upt.ro/events/schemas/BotConfigChanged.schema.json",
+  "title": "BotConfigChanged payload (exchange.bots)",
+  "description": "A bot_configs row changed (admin PUT /api/admin/bots/{id}, or seed). Produced by S1 ops/ (Paul). Full current state.",
+  "type": "object",
+  "required": ["configId", "botUserId", "symbol", "enabled", "spreadBps", "quoteQty", "maxInventory", "skewFactor", "refreshMs", "updatedBy", "updatedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "configId": { "type": "integer", "minimum": 1 },
+    "botUserId": { "type": "integer", "minimum": 1 },
+    "symbol": { "type": "string", "maxLength": 10 },
+    "enabled": { "type": "boolean" },
+    "spreadBps": { "type": "integer", "minimum": 1, "maximum": 1000 },
+    "quoteQty": { "type": "integer", "minimum": 1 },
+    "maxInventory": { "type": "integer", "minimum": 1 },
+    "skewFactor": { "type": "number" },
+    "refreshMs": { "type": "integer", "minimum": 200 },
+    "updatedBy": { "type": "string", "maxLength": 64 },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exchange.upt.ro/events/schemas/OrderEvent.schema.json",
+  "title": "Order event payload (exchange.orders)",
+  "description": "OrderPlaced / OrderUpdated / OrderCancelled / OrderRejected. Always the full current state of the order, so consumers upsert.",
+  "type": "object",
+  "required": ["orderId", "userId", "symbol", "side", "type", "qty", "remainingQty", "status", "source", "version", "updatedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "orderId": { "type": "integer", "minimum": 1 },
+    "userId": { "type": "integer", "minimum": 1 },
+    "symbol": { "type": "string", "maxLength": 10 },
+    "side": { "type": "string", "enum": ["BUY", "SELL"] },
+    "type": { "type": "string", "enum": ["LIMIT", "MARKET"] },
+    "price": { "type": ["number", "null"], "exclusiveMinimum": 0, "description": "null for MARKET" },
+    "qty": { "type": "integer", "minimum": 1 },
+    "remainingQty": { "type": "integer", "minimum": 0 },
+    "status": { "type": "string", "enum": ["PENDING", "OPEN", "PARTIALLY_FILLED", "FILLED", "CANCELLED", "REJECTED"] },
+    "source": { "type": "string", "enum": ["WEB", "MARKET_MAKER"] },
+    "reason": { "type": ["string", "null"], "description": "OrderRejected / OrderCancelled: why (INSUFFICIENT_FUNDS…, CANCELLED_BY_USER, NO_LIQUIDITY)" },
+    "version": { "type": "integer", "minimum": 0 },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  }
+}

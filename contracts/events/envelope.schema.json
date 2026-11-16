@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exchange.upt.ro/events/envelope.schema.json",
+  "title": "Event envelope",
+  "description": "Every message on every exchange.* topic. The payload schema is chosen by `type`.",
+  "type": "object",
+  "required": ["eventId", "type", "occurredAt", "schemaVersion", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid", "description": "Unique; S2 de-duplicates on it" },
+    "type": {
+      "type": "string",
+      "enum": [
+        "PlaceOrder", "ModifyOrder", "CancelOrder",
+        "OrderPlaced", "OrderUpdated", "OrderCancelled", "OrderRejected",
+        "TradeExecuted",
+        "PriceUpdated",
+        "IncidentRaised", "IncidentUpdated",
+        "BotConfigChanged"
+      ]
+    },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "schemaVersion": { "type": "integer", "const": 1 },
+    "payload": { "type": "object" }
+  },
+  "allOf": [
+    { "if": { "properties": { "type": { "enum": ["PlaceOrder", "ModifyOrder", "CancelOrder"] } } },
+      "then": { "properties": { "payload": { "$ref": "schemas/OrderCommand.schema.json" } } } },
+    { "if": { "properties": { "type": { "enum": ["OrderPlaced", "OrderUpdated", "OrderCancelled", "OrderRejected"] } } },
+      "then": { "properties": { "payload": { "$ref": "schemas/OrderEvent.schema.json" } } } },
+    { "if": { "properties": { "type": { "const": "TradeExecuted" } } },
+      "then": { "properties": { "payload": { "$ref": "schemas/TradeExecuted.schema.json" } } } },
+    { "if": { "properties": { "type": { "const": "PriceUpdated" } } },
+      "then": { "properties": { "payload": { "$ref": "schemas/PriceUpdated.schema.json" } } } },
+    { "if": { "properties": { "type": { "enum": ["IncidentRaised", "IncidentUpdated"] } } },
+      "then": { "properties": { "payload": { "$ref": "schemas/IncidentEvent.schema.json" } } } },
+    { "if": { "properties": { "type": { "const": "BotConfigChanged" } } },
+      "then": { "properties": { "payload": { "$ref": "schemas/BotConfigChanged.schema.json" } } } }
+  ]
+}

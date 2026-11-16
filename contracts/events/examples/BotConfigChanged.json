@@ -1,0 +1,19 @@
+{
+  "eventId": "b2c3d4e5-0000-4000-8000-000000000001",
+  "type": "BotConfigChanged",
+  "occurredAt": "2026-11-16T10:05:00.000Z",
+  "schemaVersion": 1,
+  "payload": {
+    "configId": 3,
+    "botUserId": 2,
+    "symbol": "ACME",
+    "enabled": true,
+    "spreadBps": 80,
+    "quoteQty": 50,
+    "maxInventory": 2000,
+    "skewFactor": 0.5,
+    "refreshMs": 2000,
+    "updatedBy": "admin",
+    "updatedAt": "2026-11-16T10:05:00.000Z"
+  }
+}

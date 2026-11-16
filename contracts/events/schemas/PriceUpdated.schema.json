@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exchange.upt.ro/events/schemas/PriceUpdated.schema.json",
+  "title": "PriceUpdated payload (exchange.prices)",
+  "description": "stocks.value changed (last traded price). Emitted once per trade.",
+  "type": "object",
+  "required": ["symbol", "value", "previousClose"],
+  "additionalProperties": false,
+  "properties": {
+    "symbol": { "type": "string", "maxLength": 10 },
+    "value": { "type": "number", "exclusiveMinimum": 0 },
+    "previousClose": { "type": "number", "exclusiveMinimum": 0 }
+  }
+}

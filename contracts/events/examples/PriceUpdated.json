@@ -1,0 +1,11 @@
+{
+  "eventId": "6f1c3b2e-6f6b-4f14-9a7d-3d0c4b1f0a12",
+  "type": "PriceUpdated",
+  "occurredAt": "2026-11-16T09:00:00.119Z",
+  "schemaVersion": 1,
+  "payload": {
+    "symbol": "ACME",
+    "value": 10.45,
+    "previousClose": 10.2
+  }
+}
