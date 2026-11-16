@@ -102,3 +102,19 @@ possible once other slices land, plus small polish:
    comparison. It is not implemented.
 7. **Housekeeping.** Commit this document. Ownership rules say others open issues instead of
    editing your files, so announce frozen interface or contract changes in the team chat.
+
+## 9. Cristi's slice (Insights + AI), implemented 16 Nov 2026 as a starting point
+
+Built on Patric's branch so Cristi has a running base; Cristi owns these folders from here on.
+
+| Piece | Where | State |
+|---|---|---|
+| S2 service (Kafka consumers, read model, REST, JWT + API key) | `s2-insights/` | compiles, `ProjectionIT` passes (Testcontainers) |
+| Nightly report agent (Spring AI + Gemini + MCP client, 15-call budget, failure email) | `s2-insights/.../agent/` | compiles; not run against a real key or MCP server |
+| Replay from offset 0 | `s2-insights/scripts/replay.sh` | written, untested against compose |
+| Contract | `contracts/s2-openapi.yaml` | written |
+| React: `PriceChart`, `MarketMovers`, Statistics, Admin > Reports | `web-client/src/features/insights/` | written, not compiled (no Vite project yet) |
+| Load generator | `infra/load/load_day.py` | syntax-checked only |
+
+Decisions taken: cash P&L for the bot, OHLC from trades only, day boundary `INSIGHTS_ZONE`
+(default Europe/Bucharest), failure email through the MCP `send_report` tool.

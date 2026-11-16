@@ -1,0 +1,281 @@
+openapi: 3.1.0
+info:
+  title: S2 Insights
+  version: 1.0.0
+  description: |
+    Statistics built from S1's Kafka events, plus the nightly report trigger. **Owner: Cristi.**
+
+    * Auth: `Authorization: Bearer <JWT>` issued by S1 (same `JWT_SECRET`), or `X-Api-Key` for the
+      MCP server on the endpoints tagged *MCP* (`/api/trades`, `/api/bots/*`, `/api/incidents*`).
+    * Dates are ISO `YYYY-MM-DD` in the exchange's day zone; `since` is an ISO instant.
+    * Nothing here writes to any database. `POST /api/agent/run` emails a report and returns it.
+servers:
+  - url: http://localhost:8082
+  - url: /api/s2
+    description: through the web-client nginx proxy
+tags:
+  - { name: Stats, description: Daily statistics, history, movers }
+  - { name: Trades, description: Recent trades (MCP) }
+  - { name: Bots, description: Market maker performance and settings (ADMIN, MCP) }
+  - { name: Incidents, description: Incidents raw and grouped (ADMIN, MCP) }
+  - { name: Agent, description: Nightly report (ADMIN) }
+security:
+  - bearerAuth: []
+  - apiKey: []
+
+paths:
+  /api/stats/daily:
+    get:
+      tags: [Stats]
+      operationId: dailyStats
+      summary: Open/high/low/close, VWAP, volume and order counts per stock per day
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date }, description: Defaults to today }
+        - { name: symbol, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: One row per stock
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/DailyStat' } }
+              example:
+                - { symbol: ACME, day: 2026-11-16, open: 10.2, high: 10.5, low: 9.9, close: 10.45, vwap: 10.31, volume: 1260, tradeCount: 14, ordersPlaced: 40, ordersCancelled: 9, ordersRejected: 2, changePct: 2.45 }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/stats/history/{symbol}:
+    get:
+      tags: [Stats]
+      operationId: history
+      summary: Daily price history for charts
+      parameters:
+        - { name: symbol, in: path, required: true, schema: { type: string } }
+        - { name: days, in: query, schema: { type: integer, default: 30, maximum: 365 } }
+      responses:
+        '200':
+          description: Oldest first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/HistoryPoint' } }
+  /api/stats/movers:
+    get:
+      tags: [Stats]
+      operationId: movers
+      summary: Biggest gainers and losers and most traded stocks of a day
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date } }
+        - { name: limit, in: query, schema: { type: integer, default: 5 } }
+      responses:
+        '200':
+          description: Movers
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Movers' }
+  /api/trades:
+    get:
+      tags: [Trades]
+      operationId: trades
+      summary: Recent trades (MCP)
+      parameters:
+        - { name: symbol, in: query, schema: { type: string } }
+        - { name: since, in: query, schema: { type: string, format: date-time }, description: Default 24 h ago }
+        - { name: limit, in: query, schema: { type: integer, default: 200, maximum: 1000 } }
+      responses:
+        '200':
+          description: Newest first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Trade' } }
+  /api/bots/stats:
+    get:
+      tags: [Bots]
+      operationId: botStats
+      summary: Market maker performance per stock per day (ADMIN, MCP)
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date } }
+        - { name: symbol, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: One row per bot and stock
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/BotStat' } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/bots/configs:
+    get:
+      tags: [Bots]
+      operationId: botConfigs
+      summary: Current bot settings as last seen in BotConfigChanged (ADMIN, MCP)
+      parameters:
+        - { name: symbol, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/BotConfig' } }
+  /api/incidents:
+    get:
+      tags: [Incidents]
+      operationId: incidents
+      summary: Raw incidents (ADMIN, MCP)
+      parameters:
+        - { name: since, in: query, schema: { type: string, format: date-time } }
+        - { name: type, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 200 } }
+      responses:
+        '200':
+          description: Newest first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Incident' } }
+  /api/incidents/summary:
+    get:
+      tags: [Incidents]
+      operationId: incidentSummary
+      summary: Incidents grouped by type and stock (ADMIN, MCP)
+      parameters:
+        - { name: since, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: Groups, most frequent first
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/IncidentGroup' } }
+  /api/agent/run:
+    post:
+      tags: [Agent]
+      operationId: runReport
+      summary: Run the nightly report now (ADMIN). Emails it and returns it; nothing is stored.
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - { name: date, in: query, schema: { type: string, format: date }, description: Defaults to yesterday }
+      responses:
+        '200':
+          description: The report. `sent=false` with `error` when the run failed (a "report failed" email was sent instead).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReportResult' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    apiKey: { type: apiKey, in: header, name: X-Api-Key }
+  responses:
+    Unauthorized: { description: Missing or invalid token }
+    Forbidden: { description: Role not allowed }
+  schemas:
+    DailyStat:
+      type: object
+      required: [symbol, day, volume, tradeCount, ordersPlaced, ordersCancelled, ordersRejected, changePct]
+      properties:
+        symbol: { type: string }
+        day: { type: string, format: date }
+        open: { type: [number, 'null'] }
+        high: { type: [number, 'null'] }
+        low: { type: [number, 'null'] }
+        close: { type: [number, 'null'] }
+        vwap: { type: [number, 'null'] }
+        volume: { type: integer }
+        tradeCount: { type: integer }
+        ordersPlaced: { type: integer }
+        ordersCancelled: { type: integer }
+        ordersRejected: { type: integer }
+        changePct: { type: number, description: (close - open) / open * 100 }
+    HistoryPoint:
+      type: object
+      required: [day, volume]
+      properties:
+        day: { type: string, format: date }
+        open: { type: [number, 'null'] }
+        high: { type: [number, 'null'] }
+        low: { type: [number, 'null'] }
+        close: { type: [number, 'null'] }
+        volume: { type: integer }
+    Mover:
+      type: object
+      required: [symbol, changePct, volume, tradeCount]
+      properties:
+        symbol: { type: string }
+        open: { type: [number, 'null'] }
+        close: { type: [number, 'null'] }
+        changePct: { type: number }
+        volume: { type: integer }
+        tradeCount: { type: integer }
+    Movers:
+      type: object
+      required: [date, gainers, losers, mostTraded]
+      properties:
+        date: { type: string, format: date }
+        gainers: { type: array, items: { $ref: '#/components/schemas/Mover' } }
+        losers: { type: array, items: { $ref: '#/components/schemas/Mover' } }
+        mostTraded: { type: array, items: { $ref: '#/components/schemas/Mover' } }
+    Trade:
+      type: object
+      required: [tradeId, symbol, buyerUserId, sellerUserId, qty, price, totalValue, executedAt]
+      properties:
+        tradeId: { type: integer, format: int64 }
+        symbol: { type: string }
+        buyerUserId: { type: integer, format: int64 }
+        sellerUserId: { type: integer, format: int64 }
+        qty: { type: integer, format: int64 }
+        price: { type: number }
+        totalValue: { type: number }
+        executedAt: { type: string, format: date-time }
+    BotStat:
+      type: object
+      required: [botUserId, symbol, day, quotesPlaced, fills, boughtQty, soldQty, endInventory, realizedPnl]
+      properties:
+        botUserId: { type: integer, format: int64 }
+        symbol: { type: string }
+        day: { type: string, format: date }
+        quotesPlaced: { type: integer }
+        fills: { type: integer }
+        boughtQty: { type: integer }
+        soldQty: { type: integer }
+        endInventory: { type: integer, description: Net shares (bought - sold) that day }
+        realizedPnl: { type: number, description: Cash P&L = sells - buys, inventory not marked to market }
+        avgSpreadBps: { type: [number, 'null'] }
+    BotConfig:
+      type: object
+      required: [configId, botUserId, symbol, enabled, spreadBps, quoteQty, maxInventory, skewFactor, refreshMs, updatedAt]
+      properties:
+        configId: { type: integer, format: int64 }
+        botUserId: { type: integer, format: int64 }
+        symbol: { type: string }
+        enabled: { type: boolean }
+        spreadBps: { type: integer }
+        quoteQty: { type: integer }
+        maxInventory: { type: integer }
+        skewFactor: { type: number }
+        refreshMs: { type: integer }
+        updatedAt: { type: string, format: date-time }
+    Incident:
+      type: object
+      required: [incidentId, type, severity, message, status, createdAt]
+      properties:
+        incidentId: { type: integer, format: int64 }
+        type: { type: string }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        symbol: { type: [string, 'null'] }
+        orderId: { type: [integer, 'null'], format: int64 }
+        message: { type: string }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+    IncidentGroup:
+      type: object
+      required: [type, count]
+      properties:
+        type: { type: string }
+        symbol: { type: [string, 'null'] }
+        count: { type: integer }
+        exampleMessage: { type: [string, 'null'] }
+    ReportResult:
+      type: object
+      required: [date, sent, toolCalls, generatedAt]
+      properties:
+        date: { type: string, format: date }
+        sent: { type: boolean, description: send_report was called }
+        report: { type: [string, 'null'], description: Markdown }
+        toolCalls: { type: integer }
+        generatedAt: { type: string, format: date-time }
+        error: { type: [string, 'null'] }

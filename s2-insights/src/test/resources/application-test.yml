@@ -1,0 +1,12 @@
+spring:
+  kafka:
+    listener:
+      auto-startup: false
+  ai:
+    mcp:
+      client:
+        enabled: false
+insights:
+  jwt-secret: test-secret-test-secret-test-secret-test-secret
+  service-api-key: test-key
+  zone: UTC
