@@ -21,8 +21,8 @@ public record TradeResponse(
 
     public static TradeResponse from(Trade t, String symbol, Long viewerUserId) {
         String side = viewerUserId == null ? null
-                : viewerUserId == t.getBuyerUserId() ? "BUY"
-                : viewerUserId == t.getSellerUserId() ? "SELL" : null;
+                : viewerUserId.equals(t.getBuyerUserId()) ? "BUY"
+                : viewerUserId.equals(t.getSellerUserId()) ? "SELL" : null;
         return new TradeResponse(t.getId(), symbol, t.getBuyOrderId(), t.getSellOrderId(), t.getBuyerUserId(),
                 t.getSellerUserId(), t.getQty(), t.getPrice(), t.getTotalValue(), t.getExecutedAt(), side);
     }

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exchange.upt.ro/events/schemas/IncidentEvent.schema.json",
+  "title": "Incident event payload (exchange.incidents)",
+  "description": "IncidentRaised / IncidentUpdated. Produced by S1 ops/ (Paul). Key = symbol, or \"global\" when stockId is null.",
+  "type": "object",
+  "required": ["incidentId", "type", "severity", "message", "status", "createdAt"],
+  "additionalProperties": false,
+  "properties": {
+    "incidentId": { "type": "integer", "minimum": 1 },
+    "type": { "type": "string", "enum": ["ORDER_REJECTED", "INSUFFICIENT_FUNDS", "INSUFFICIENT_SHARES", "CONCURRENCY_CONFLICT", "PRICE_SPIKE", "BOT_INVENTORY_LIMIT", "EVENT_PUBLISH_FAILED"] },
+    "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+    "symbol": { "type": ["string", "null"], "maxLength": 10 },
+    "orderId": { "type": ["integer", "null"] },
+    "userId": { "type": ["integer", "null"] },
+    "message": { "type": "string" },
+    "status": { "type": "string", "enum": ["OPEN", "ACKNOWLEDGED", "RESOLVED"] },
+    "createdAt": { "type": "string", "format": "date-time" }
+  }
+}

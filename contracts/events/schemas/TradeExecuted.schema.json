@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://exchange.upt.ro/events/schemas/TradeExecuted.schema.json",
+  "title": "TradeExecuted payload (exchange.trades)",
+  "type": "object",
+  "required": ["tradeId", "symbol", "buyOrderId", "sellOrderId", "buyerUserId", "sellerUserId", "qty", "price", "totalValue", "executedAt"],
+  "additionalProperties": false,
+  "properties": {
+    "tradeId": { "type": "integer", "minimum": 1 },
+    "symbol": { "type": "string", "maxLength": 10 },
+    "buyOrderId": { "type": "integer", "minimum": 1 },
+    "sellOrderId": { "type": "integer", "minimum": 1 },
+    "buyerUserId": { "type": "integer", "minimum": 1 },
+    "sellerUserId": { "type": "integer", "minimum": 1 },
+    "qty": { "type": "integer", "minimum": 1 },
+    "price": { "type": "number", "exclusiveMinimum": 0, "description": "Execution price (the resting order's price), 4 decimals" },
+    "totalValue": { "type": "number", "minimum": 0, "description": "qty × price rounded to 2 decimals" },
+    "executedAt": { "type": "string", "format": "date-time" }
+  }
+}

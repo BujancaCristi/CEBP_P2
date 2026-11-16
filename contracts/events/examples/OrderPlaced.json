@@ -1,0 +1,21 @@
+{
+  "eventId": "7c2f0a44-1b3e-4d55-8e6f-9a0b1c2d3e01",
+  "type": "OrderPlaced",
+  "occurredAt": "2026-11-16T09:00:00.000Z",
+  "schemaVersion": 1,
+  "payload": {
+    "orderId": 101,
+    "userId": 7,
+    "symbol": "ACME",
+    "side": "BUY",
+    "type": "LIMIT",
+    "price": 10.5,
+    "qty": 100,
+    "remainingQty": 100,
+    "status": "PENDING",
+    "source": "WEB",
+    "reason": null,
+    "version": 0,
+    "updatedAt": "2026-11-16T09:00:00.000Z"
+  }
+}

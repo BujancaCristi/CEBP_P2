@@ -1,0 +1,17 @@
+{
+  "eventId": "a1b2c3d4-0000-4000-8000-000000000001",
+  "type": "IncidentRaised",
+  "occurredAt": "2026-11-16T09:02:00.000Z",
+  "schemaVersion": 1,
+  "payload": {
+    "incidentId": 12,
+    "type": "CONCURRENCY_CONFLICT",
+    "severity": "LOW",
+    "symbol": "ACME",
+    "orderId": 98,
+    "userId": 7,
+    "message": "buy-from-offer PRICE_CHANGED: The offer changed since you saw it: price is now 12.0000 for 100 shares (version 4)",
+    "status": "OPEN",
+    "createdAt": "2026-11-16T09:02:00.000Z"
+  }
+}

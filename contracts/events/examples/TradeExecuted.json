@@ -1,0 +1,18 @@
+{
+  "eventId": "6f1c3b2e-6f6b-4f14-9a7d-3d0c4b1f0a11",
+  "type": "TradeExecuted",
+  "occurredAt": "2026-11-16T09:00:00.118Z",
+  "schemaVersion": 1,
+  "payload": {
+    "tradeId": 555,
+    "symbol": "ACME",
+    "buyOrderId": 101,
+    "sellOrderId": 98,
+    "buyerUserId": 7,
+    "sellerUserId": 3,
+    "qty": 60,
+    "price": 10.45,
+    "totalValue": 627.0,
+    "executedAt": "2026-11-16T09:00:00.118Z"
+  }
+}
