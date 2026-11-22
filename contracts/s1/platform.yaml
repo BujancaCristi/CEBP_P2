@@ -1,0 +1,60 @@
+openapi: 3.0.3
+info:
+  title: Exchange Platform API
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /api/auth/register:
+    post:
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201': { description: Created }
+  /api/auth/login:
+    post:
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200': { description: OK }
+  /api/me:
+    get:
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Current user } }
+  /api/companies:
+    get:
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Companies } }
+  /api/stocks:
+    get:
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Stocks } }
+  /api/portfolio:
+    get:
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Portfolio } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string, format: password }
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password, minLength: 8 }

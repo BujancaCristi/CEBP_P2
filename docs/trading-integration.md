@@ -61,6 +61,21 @@ so it is inert in the default profile).
 
 Interfaces and their Javadoc are the frozen Phase-0 signatures. Only the stub *classes* go.
 
+## Cezar platform implementation status
+
+The platform slice is implemented alongside the existing stubs:
+
+* `JwtSecurityConfig` provides HS256 JWT authentication in the default Docker profile.
+* `StubSecurityConfig` remains active only under `local` and `test`.
+* `AccountLedgerImpl` provides atomic production cash/share settlement and is selected outside
+  `local` and `test`; `StubAccountLedger` remains available for existing trading tests.
+* `OutboxRelay` publishes unpublished rows to Kafka in batches every 200 ms using the outbox
+  repository's SKIP LOCKED query.
+* `PlatformController` provides register, login, `/api/me`, companies, stocks, and portfolio.
+* `PlatformSeed` provides demo users and data only under the `local` or `demo` profiles.
+* The nginx configuration uses Docker DNS to resolve `s1-exchange` and `s2-insights`
+  dynamically, preventing stale upstream container IPs after recreation.
+
 ## Calling into trading from your slice
 
 * **Paul's market maker** places and cancels quotes through the public API

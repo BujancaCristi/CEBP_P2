@@ -19,8 +19,15 @@ Status on 16 Nov 2026. Read with `Work_Split.pdf` (Patric section) and `docs/con
     +-- POST /api/offers/{id}/buy ---> one conditional UPDATE, synchronous, 200 or 409
 ```
 
-Only the trading slice is real. Platform (Cezar), ops and realtime (Paul) run as stubs behind the
-frozen interfaces, so S1 compiles and runs alone.
+Trading is implemented, Cezar's platform implementation is also in place, and ops/realtime
+(Paul) remain behind stubs. S1 therefore compiles and runs with JWT authentication, account
+management, ledger settlement, and the outbox relay. The full Docker demo still requires Paul
+and Cristi integration for MCP, live updates, bots, and reports.
+
+For demo-only previews, Docker Compose enables `VITE_MOCK_DATA=true`. This populates the
+market, portfolio, order/trade history, order books, charts, statistics, movers, and reports
+with synthetic frontend data. Authentication remains backed by S1. Set
+`VITE_MOCK_DATA=false` and rebuild the web client to use live APIs only.
 
 ## 2. Backend, package by package (`s1-exchange/src/main/java/ro/upt/exchange/s1/`)
 
