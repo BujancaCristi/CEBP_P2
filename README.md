@@ -41,9 +41,6 @@ The Cezar platform slice now includes:
 - Vite/React application shell, authentication context, STOMP hook, and nginx routing
 - Login/register, market, portfolio, and account-history placeholders
 - Docker Compose, `.env.example`, Nginx proxy configuration, and CI workflow
-
-The Paul slice now includes:
-
 - S1 ops: bot settings (`/api/admin/bots`) and incident management (`/api/admin/incidents`)
 - S1 realtime: `/ws` STOMP WebSocket broker and live event publishing
 - Market Maker bot (`market-maker/`): automated quoting engine and Spring Shell CLI
@@ -92,12 +89,12 @@ The React shell is currently present, but not every screen is fully populated:
 - Cezar: market, portfolio, authentication, and account shell
 - Patric: stock trading page, order book, offers, order form, and order/trade APIs
 - Cristi: charts, market movers, statistics, and reports
-- Paul: live STOMP updates, market-maker bot, MCP server, and admin screens (bot settings and incidents)
+- Paul: live STOMP updates and market-maker/ops screens
 
 My Orders and My Trades are platform-route placeholders until their trading API displays are
 completed and connected.
 
-S2 has MCP client integration enabled (`MCP_CLIENT_ENABLED: true`) connecting to Paul's MCP server on port 8083.
+S2 starts with MCP client integration enabled connecting to the MCP server on port 8083.
 
 ## Demo/mock data mode
 
