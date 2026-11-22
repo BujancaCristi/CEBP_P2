@@ -1,0 +1,32 @@
+# MCP server (owner: Paul). No database credentials, by design.
+server:
+  port: ${MCP_PORT:8083}
+
+spring:
+  application:
+    name: mcp-server
+  ai:
+    mcp:
+      server:
+        name: exchange-tools
+        version: 1.0.0
+        type: SYNC
+        # SSE transport: GET /sse opens the stream, POST /mcp/message carries the calls
+        sse-endpoint: /sse
+        sse-message-endpoint: /mcp/message
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+mcp:
+  s2-url: ${S2_URL:http://localhost:8082}
+  service-api-key: ${SERVICE_API_KEY:dev-service-key}
+  web-url: ${WEB_URL:http://localhost}
+  report-recipients: ${REPORT_RECIPIENTS:admin@example.com}
+  report-from: ${REPORT_FROM:night-shift@exchange.local}

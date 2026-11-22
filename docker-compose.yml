@@ -1,20 +1,25 @@
+# The whole system: 10 containers (2 x PostgreSQL, Kafka + UI, Mailpit, S1, S2, MCP server, web app, market maker).
+#   cp .env.example .env && docker compose up --build
+# Web app http://localhost | Mailpit http://localhost:8025 | Kafka UI http://localhost:8090
+# S1 Swagger http://localhost:8081/swagger-ui.html | S2 Swagger http://localhost:8082/swagger-ui.html
+# MCP server (SSE) http://localhost:8083/sse
 services:
   exchange-db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: exchange
-      POSTGRES_USER: exchange
-      POSTGRES_PASSWORD: exchange
-    healthcheck: { test: ["CMD-SHELL", "pg_isready -U exchange -d exchange"], interval: 5s, timeout: 5s, retries: 10 }
+      POSTGRES_USER: ${S1_DB_USER:-exchange}
+      POSTGRES_PASSWORD: ${S1_DB_PASSWORD:-exchange}
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U ${S1_DB_USER:-exchange} -d exchange"], interval: 5s, timeout: 5s, retries: 10 }
     volumes: [exchange-data:/var/lib/postgresql/data]
 
   insights-db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: insights
-      POSTGRES_USER: insights
-      POSTGRES_PASSWORD: insights
-    healthcheck: { test: ["CMD-SHELL", "pg_isready -U insights -d insights"], interval: 5s, timeout: 5s, retries: 10 }
+      POSTGRES_USER: ${S2_DB_USER:-insights}
+      POSTGRES_PASSWORD: ${S2_DB_PASSWORD:-insights}
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U ${S2_DB_USER:-insights} -d insights"], interval: 5s, timeout: 5s, retries: 10 }
     volumes: [insights-data:/var/lib/postgresql/data]
 
   kafka:
@@ -39,44 +44,77 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports: ["8090:8080"]
 
   mailpit:
     image: axllent/mailpit:latest
     ports: ["8025:8025", "1025:1025"]
 
+  # Only S1 gets S1_DB_*; only S2 gets S2_DB_*; the MCP server and the bot get no database credentials.
   s1-exchange:
     build: ./s1-exchange
     depends_on:
       exchange-db: { condition: service_healthy }
       kafka: { condition: service_healthy }
     environment:
+      SPRING_PROFILES_ACTIVE: demo
       S1_DB_URL: jdbc:postgresql://exchange-db:5432/exchange
-      S1_DB_USER: exchange
-      S1_DB_PASSWORD: exchange
+      S1_DB_USER: ${S1_DB_USER:-exchange}
+      S1_DB_PASSWORD: ${S1_DB_PASSWORD:-exchange}
       KAFKA_BOOTSTRAP: kafka:9092
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      EXCHANGE_CONCURRENCY_MODE: ${EXCHANGE_CONCURRENCY_MODE:-SAFE}
     ports: ["8081:8081"]
+    restart: on-failure
+
+  mcp-server:
+    build: ./mcp-server
+    depends_on: [mailpit]
+    environment:
+      S2_URL: http://s2-insights:8082
+      SERVICE_API_KEY: ${SERVICE_API_KEY:?SERVICE_API_KEY is required}
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      REPORT_RECIPIENTS: ${REPORT_RECIPIENTS:-admin@example.com}
+      WEB_URL: ${WEB_URL:-http://localhost}
+    ports: ["8083:8083"]
+    restart: on-failure
 
   s2-insights:
     build: ./s2-insights
     depends_on:
       insights-db: { condition: service_healthy }
       kafka: { condition: service_healthy }
+      mcp-server: { condition: service_healthy }
     environment:
       S2_DB_URL: jdbc:postgresql://insights-db:5432/insights
-      S2_DB_USER: insights
-      S2_DB_PASSWORD: insights
+      S2_DB_USER: ${S2_DB_USER:-insights}
+      S2_DB_PASSWORD: ${S2_DB_PASSWORD:-insights}
       KAFKA_BOOTSTRAP: kafka:9092
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       SERVICE_API_KEY: ${SERVICE_API_KEY:?SERVICE_API_KEY is required}
-      MCP_CLIENT_ENABLED: "false"
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-missing}
+      MCP_CLIENT_ENABLED: "true"
+      MCP_URL: http://mcp-server:8083
     ports: ["8082:8082"]
+    restart: on-failure
+
+  market-maker:
+    build: ./market-maker
+    depends_on:
+      s1-exchange: { condition: service_healthy }
+    environment:
+      S1_URL: http://s1-exchange:8081
+      MM_USERNAME: ${MM_USERNAME:-market-maker}
+      MM_PASSWORD: ${MM_PASSWORD:-bot-password}
+      MM_AUTOSTART: "true"
+    restart: on-failure
 
   web-client:
     build:
       context: ./web-client
       args:
-        VITE_MOCK_DATA: ${VITE_MOCK_DATA:-true}
+        VITE_MOCK_DATA: ${VITE_MOCK_DATA:-false}
     depends_on: [s1-exchange, s2-insights]
     ports: ["80:80"]
 

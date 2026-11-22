@@ -1,4 +1,3 @@
-# PLACEHOLDER - owner: Paul (ops/). Replace with the real ops configuration.
-# Imported by application.yml; kept here so the import does not fail before Paul's PR lands.
+# Ops (owner: Paul): bot settings and incidents. No tunables yet; limits live in BotConfigService.
 exchange:
   ops: {}

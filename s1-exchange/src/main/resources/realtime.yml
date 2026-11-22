@@ -1,5 +1,6 @@
-# PLACEHOLDER - owner: Paul (realtime/). Replace with the real STOMP/WebSocket configuration.
-# Imported by application.yml; kept here so the import does not fail before Paul's PR lands.
+# Realtime (owner: Paul): STOMP over WebSocket at /ws with a simple in-memory broker.
+# Destinations: /topic/prices[/{symbol}], /topic/book/{symbol}, /topic/trades/{symbol},
+# /topic/bot-config, /user/queue/orders, /user/queue/bot-config (see contracts/s1/ops.yaml).
 exchange:
   realtime:
     endpoint: /ws

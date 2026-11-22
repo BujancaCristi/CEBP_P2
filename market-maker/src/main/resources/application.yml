@@ -1,0 +1,15 @@
+# Market maker (owner: Paul). A headless S1 client: no web server, no database, no AI.
+spring:
+  application:
+    name: market-maker
+  main:
+    web-application-type: none
+
+mm:
+  s1-url: ${S1_URL:http://localhost:8081}
+  username: ${MM_USERNAME:market-maker}
+  password: ${MM_PASSWORD:bot-password}
+  autostart: ${MM_AUTOSTART:true}
+  # How often the loop wakes up. Each stock is re-quoted every refreshMs from its own settings, and the
+  # settings are re-read every tick, so an admin's change applies within one tick.
+  tick-ms: ${MM_TICK_MS:1000}

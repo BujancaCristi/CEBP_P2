@@ -1,0 +1,166 @@
+openapi: 3.1.0
+info:
+  title: S1 Exchange core - Ops (bot settings, incidents) and realtime
+  version: 1.0.0
+  description: |
+    Bot settings and incidents. **Owner: Paul.** Joined with `trading.yaml` and `platform.yaml`.
+
+    ### STOMP destinations (WebSocket at `/ws`)
+    Connect with the native header `Authorization: Bearer <JWT>` to receive `/user/queue/*`.
+    Payloads are the event payloads from `contracts/events/schemas`.
+
+    | Destination | Payload | Who |
+    |---|---|---|
+    | `/topic/prices` and `/topic/prices/{symbol}` | PriceUpdated | anyone connected |
+    | `/topic/book/{symbol}` | Book (same as `GET /api/stocks/{symbol}/book`) | anyone connected |
+    | `/topic/trades/{symbol}` | TradeExecuted | anyone connected |
+    | `/topic/bot-config` | BotConfigChanged | anyone connected |
+    | `/user/queue/orders` | OrderEvent, own orders only | logged in |
+    | `/user/queue/bot-config` | BotConfigChanged, own settings only | the market maker |
+servers:
+  - url: http://localhost:8081
+  - url: /api/s1
+security:
+  - bearerAuth: []
+tags:
+  - { name: Bots, description: The market maker's own settings }
+  - { name: Admin, description: Bot settings and incidents for admins }
+
+paths:
+  /api/bots/me/configs:
+    get:
+      tags: [Bots]
+      operationId: myBotConfigs
+      summary: The calling market maker's settings (MARKET_MAKER)
+      responses:
+        '200':
+          description: One row per stock
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/BotConfig' } }
+        '403': { description: Not a market maker }
+  /api/bots/me/inventory-limit:
+    post:
+      tags: [Bots]
+      operationId: reportInventoryLimit
+      summary: The bot reports it reached max inventory; S1 records a BOT_INVENTORY_LIMIT incident (MARKET_MAKER)
+      parameters:
+        - { name: symbol, in: query, required: true, schema: { type: string } }
+        - { name: inventory, in: query, required: true, schema: { type: integer } }
+        - { name: maxInventory, in: query, required: true, schema: { type: integer } }
+      responses:
+        '202':
+          description: Incident recorded
+          content:
+            application/json:
+              schema: { type: object, properties: { incidentId: { type: integer } } }
+  /api/admin/bots:
+    get:
+      tags: [Admin]
+      operationId: adminBots
+      summary: All bot settings (ADMIN)
+      responses:
+        '200':
+          description: Settings, by symbol
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/BotConfig' } }
+  /api/admin/bots/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      tags: [Admin]
+      operationId: adminBot
+      summary: One bot setting (ADMIN)
+      responses:
+        '200': { description: The setting, content: { application/json: { schema: { $ref: '#/components/schemas/BotConfig' } } } }
+        '404': { description: Unknown id }
+    put:
+      tags: [Admin]
+      operationId: updateBot
+      summary: Change bot settings (ADMIN). Publishes BotConfigChanged to exchange.bots and /user/queue/bot-config.
+      description: Every field is optional; omitted fields keep their value. This is how report recommendations get applied.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BotConfigUpdate' }
+            example: { spreadBps: 75 }
+      responses:
+        '200': { description: The updated setting, content: { application/json: { schema: { $ref: '#/components/schemas/BotConfig' } } } }
+        '400': { description: Value out of range (problem details, code VALIDATION) }
+  /api/admin/incidents:
+    get:
+      tags: [Admin]
+      operationId: adminIncidents
+      summary: Incidents, newest first (ADMIN)
+      parameters:
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/IncidentStatus' } }
+        - { name: type, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, default: 200, maximum: 1000 } }
+      responses:
+        '200':
+          description: Incidents
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Incident' } }
+  /api/admin/incidents/{id}:
+    patch:
+      tags: [Admin]
+      operationId: changeIncident
+      summary: Acknowledge or resolve an incident (ADMIN). Publishes IncidentUpdated.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [status], properties: { status: { $ref: '#/components/schemas/IncidentStatus' } } }
+      responses:
+        '200': { description: The incident, content: { application/json: { schema: { $ref: '#/components/schemas/Incident' } } } }
+        '404': { description: Unknown id }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    BotConfig:
+      type: object
+      required: [configId, botUserId, symbol, enabled, spreadBps, quoteQty, maxInventory, skewFactor, refreshMs, updatedBy, updatedAt, version]
+      properties:
+        configId: { type: integer }
+        botUserId: { type: integer }
+        symbol: { type: string }
+        enabled: { type: boolean }
+        spreadBps: { type: integer, minimum: 1, maximum: 2000 }
+        quoteQty: { type: integer, minimum: 1 }
+        maxInventory: { type: integer, minimum: 1 }
+        skewFactor: { type: number, minimum: 0, maximum: 1 }
+        refreshMs: { type: integer, minimum: 250 }
+        updatedBy: { type: string }
+        updatedAt: { type: string, format: date-time }
+        version: { type: integer }
+    BotConfigUpdate:
+      type: object
+      description: quoteQty may not exceed maxInventory after the change.
+      properties:
+        enabled: { type: boolean }
+        spreadBps: { type: integer, minimum: 1, maximum: 2000 }
+        quoteQty: { type: integer, minimum: 1 }
+        maxInventory: { type: integer, minimum: 1 }
+        skewFactor: { type: number, minimum: 0, maximum: 1 }
+        refreshMs: { type: integer, minimum: 250 }
+    IncidentStatus: { type: string, enum: [OPEN, ACKNOWLEDGED, RESOLVED] }
+    Incident:
+      type: object
+      required: [incidentId, type, severity, message, status, createdAt]
+      properties:
+        incidentId: { type: integer }
+        type: { type: string, enum: [ORDER_REJECTED, INSUFFICIENT_FUNDS, INSUFFICIENT_SHARES, CONCURRENCY_CONFLICT, PRICE_SPIKE, BOT_INVENTORY_LIMIT, EVENT_PUBLISH_FAILED] }
+        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        symbol: { type: [string, 'null'] }
+        orderId: { type: [integer, 'null'] }
+        userId: { type: [integer, 'null'] }
+        message: { type: string }
+        status: { $ref: '#/components/schemas/IncidentStatus' }
+        createdAt: { type: string, format: date-time }
