@@ -42,28 +42,14 @@ The Cezar platform slice now includes:
 - Login/register, market, portfolio, and account-history placeholders
 - Docker Compose, `.env.example`, Nginx proxy configuration, and CI workflow
 
-The Paul slice (Ops, Realtime, Market Maker, MCP Server, Admin UI) now includes:
+The Paul slice now includes:
 
-- **S1 Operations (`ro.upt.exchange.s1.ops`)**:
-  - `BotSettingsController`: `/api/admin/bots` (view/update bot configs) and `/api/bots/me/configs` (market maker retrieval).
-  - `IncidentController` & `OpsIncidentService`: `/api/admin/incidents` (paginated incidents with status and type filters) and `/api/admin/incidents/{id}` (status updates: `OPEN` -> `ACKNOWLEDGED` -> `RESOLVED`).
-  - `BotConfigSeed`: automatic demo seeding of bot configurations and initial inventory for active stocks.
-- **S1 Realtime STOMP (`ro.upt.exchange.s1.realtime`)**:
-  - STOMP WebSocket broker on `/ws` with `StompAuthChannelInterceptor` (validates JWT Bearer tokens on `CONNECT`).
-  - `StompLivePublisher`: transactional publishing to `/topic/prices`, `/topic/orders/{userId}`, `/topic/trades/{symbol}`, `/topic/incidents`, and `/topic/bots`.
-- **Market Maker Bot (`market-maker/`)**:
-  - Standalone Spring Boot 3 service with Spring Shell interactive terminal CLI (`start`, `stop`, `status`, `config`).
-  - Automated two-sided quoting engine with inventory skew adjustment and cancel/replace loops.
-  - Reconnects automatically to S1 and synchronizes state via `/ws` STOMP feeds.
-- **Model Context Protocol Server (`mcp-server/`)**:
-  - Spring Boot 3 service exposing 7 tools on port 8083 via SSE and JSON-RPC (`/mcp`).
-  - Implements `get_market_summary`, `get_incidents`, `get_bot_performance`, `get_bot_configs`, `get_trades`, `propose_bot_config_change`, and `send_report` (HTML emails delivered via Mailpit).
-- **Admin Frontend Screens (`web-client/src/features/admin/`)**:
-  - `/admin/bots`: Market maker configuration dashboard with live spread, inventory limits, and enable/disable toggles.
-  - `/admin/incidents`: Incident management view with severity badges, filters, and status resolution actions.
-- **Contract Specifications**:
-  - `contracts/s1/ops.yaml` (OpenAPI specification for Ops & Bot APIs)
-  - `contracts/mcp-tools.md` (Formal schema specification for the 7 MCP tools)
+- S1 ops: bot settings (`/api/admin/bots`) and incident management (`/api/admin/incidents`)
+- S1 realtime: `/ws` STOMP WebSocket broker and live event publishing
+- Market Maker bot (`market-maker/`): automated quoting engine and Spring Shell CLI
+- MCP Server (`mcp-server/`): 7 MCP tools on port 8083 and email reporting
+- React Admin UI: Bot Settings and Incidents management pages
+- Contracts: `contracts/s1/ops.yaml` and `contracts/mcp-tools.md`
 
 S1 and S2 can be rebuilt independently:
 
