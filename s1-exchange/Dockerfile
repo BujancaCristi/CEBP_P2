@@ -8,7 +8,10 @@ RUN mvn -q -B -DskipTests package
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-RUN useradd --system --uid 1001 app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 1001 app
 COPY --from=build /build/target/s1-exchange-*.jar app.jar
 USER app
 EXPOSE 8081

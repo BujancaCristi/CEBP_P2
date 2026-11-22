@@ -1,0 +1,85 @@
+services:
+  exchange-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: exchange
+      POSTGRES_USER: exchange
+      POSTGRES_PASSWORD: exchange
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U exchange -d exchange"], interval: 5s, timeout: 5s, retries: 10 }
+    volumes: [exchange-data:/var/lib/postgresql/data]
+
+  insights-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: insights
+      POSTGRES_USER: insights
+      POSTGRES_PASSWORD: insights
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U insights -d insights"], interval: 5s, timeout: 5s, retries: 10 }
+    volumes: [insights-data:/var/lib/postgresql/data]
+
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck: { test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null"], interval: 10s, timeout: 5s, retries: 12 }
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on: [kafka]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025", "1025:1025"]
+
+  s1-exchange:
+    build: ./s1-exchange
+    depends_on:
+      exchange-db: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+    environment:
+      S1_DB_URL: jdbc:postgresql://exchange-db:5432/exchange
+      S1_DB_USER: exchange
+      S1_DB_PASSWORD: exchange
+      KAFKA_BOOTSTRAP: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+    ports: ["8081:8081"]
+
+  s2-insights:
+    build: ./s2-insights
+    depends_on:
+      insights-db: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+    environment:
+      S2_DB_URL: jdbc:postgresql://insights-db:5432/insights
+      S2_DB_USER: insights
+      S2_DB_PASSWORD: insights
+      KAFKA_BOOTSTRAP: kafka:9092
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      SERVICE_API_KEY: ${SERVICE_API_KEY:?SERVICE_API_KEY is required}
+      MCP_CLIENT_ENABLED: "false"
+    ports: ["8082:8082"]
+
+  web-client:
+    build:
+      context: ./web-client
+      args:
+        VITE_MOCK_DATA: ${VITE_MOCK_DATA:-true}
+    depends_on: [s1-exchange, s2-insights]
+    ports: ["80:80"]
+
+volumes:
+  exchange-data:
+  insights-data:
