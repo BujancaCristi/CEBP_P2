@@ -2,17 +2,14 @@ package ro.upt.exchange.s1.ops;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import ro.upt.exchange.s1.domain.IncidentSeverity;
 import ro.upt.exchange.s1.domain.IncidentType;
 
 import java.util.Map;
 
 /**
- * STUB - owned by Paul, delete when the real {@code IncidentService} lands.
- * Logs the incident and returns 0 so trading/ and platform/ compile and run.
+ * STUB - replaced by OpsIncidentService. Kept without @Service for test reference.
  */
-@Service
 public class NoopIncidentService implements IncidentService {
 
     private static final Logger log = LoggerFactory.getLogger(NoopIncidentService.class);

@@ -1,14 +1,12 @@
 package ro.upt.exchange.s1.realtime;
 
-import org.springframework.stereotype.Service;
 import ro.upt.exchange.s1.events.BookSnapshot;
 import ro.upt.exchange.s1.events.BotConfigChangedPayload;
 import ro.upt.exchange.s1.events.OrderEventPayload;
 import ro.upt.exchange.s1.events.PriceUpdatedPayload;
 import ro.upt.exchange.s1.events.TradeExecutedPayload;
 
-/** STUB - owned by Paul, delete when the real STOMP {@code LivePublisher} lands. */
-@Service
+/** STUB - replaced by StompLivePublisher. Kept without @Service for test reference. */
 public class NoopLivePublisher implements LivePublisher {
     @Override public void priceChanged(PriceUpdatedPayload price) { }
     @Override public void bookChanged(BookSnapshot book) { }
