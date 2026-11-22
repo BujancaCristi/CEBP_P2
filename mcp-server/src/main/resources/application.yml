@@ -1,0 +1,46 @@
+# MCP Server configuration. Owner: Paul.
+server:
+  port: ${MCP_PORT:8083}
+
+spring:
+  application:
+    name: mcp-server
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  ai:
+    mcp:
+      server:
+        name: exchange-mcp-server
+        version: 1.0.0
+        type: SYNC
+
+mcp:
+  s2-url: ${S2_URL:http://localhost:8082}
+  service-api-key: ${SERVICE_API_KEY:dev-service-key}
+  report-recipients: ${REPORT_RECIPIENTS:admin@exchange.local}
+  web-url: ${WEB_URL:http://localhost}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    mail:
+      enabled: false
+
+logging:
+  level:
+    ro.upt.exchange: INFO
+    org.springframework.ai.mcp: DEBUG

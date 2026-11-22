@@ -32,7 +32,7 @@ public class JwtSecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
-                                "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                                "/actuator/health", "/actuator/health/**", "/actuator/info", "/error").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

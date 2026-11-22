@@ -1,5 +1,5 @@
-# PLACEHOLDER - owner: Paul (realtime/). Replace with the real STOMP/WebSocket configuration.
-# Imported by application.yml; kept here so the import does not fail before Paul's PR lands.
-exchange:
-  realtime:
-    endpoint: /ws
+# S1 Realtime (WebSocket / STOMP) configuration. Owner: Paul.
+spring:
+  websocket:
+    stomp:
+      endpoint: /ws

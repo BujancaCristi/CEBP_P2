@@ -1,0 +1,18 @@
+# Market Maker configuration. Owner: Paul.
+spring:
+  application:
+    name: market-maker
+  main:
+    web-application-type: none
+
+market-maker:
+  s1-url: ${S1_URL:http://localhost:8081}
+  username: ${MM_USERNAME:market-maker}
+  password: ${MM_PASSWORD:bot-password}
+  autostart: ${MM_AUTOSTART:true}
+  connect-retry-interval-ms: 3000
+
+logging:
+  level:
+    ro.upt.exchange: INFO
+    org.springframework.web.socket: WARN

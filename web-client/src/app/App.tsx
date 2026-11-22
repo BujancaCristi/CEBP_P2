@@ -7,12 +7,13 @@ import { LoginPage, RegisterPage } from '@/features/platform';
 import { platformRoutes } from '@/features/platform/routes';
 import { tradingRoutes } from '@/features/trading/routes';
 import { insightsRoutes } from '@/features/insights/routes';
+import { adminRoutes } from '@/features/admin/routes';
 
 const queryClient = new QueryClient();
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
-  { path: '/', element: <ProtectedLayout />, children: [...platformRoutes, ...tradingRoutes, ...insightsRoutes] },
+  { path: '/', element: <ProtectedLayout />, children: [...platformRoutes, ...tradingRoutes, ...insightsRoutes, ...adminRoutes] },
 ]);
 
 function ProtectedLayout() {
@@ -26,7 +27,13 @@ function ProtectedLayout() {
       <NavLink component={Link} to="/orders" label="My orders" />
       <NavLink component={Link} to="/trades" label="My trades" />
       <NavLink component={Link} to="/statistics" label="Statistics" />
-      {user.role === 'ADMIN' && <NavLink component={Link} to="/admin/reports" label="Reports" />}
+      {user.role === 'ADMIN' && (
+        <>
+          <NavLink component={Link} to="/admin/bots" label="Bot settings" />
+          <NavLink component={Link} to="/admin/incidents" label="Incidents" />
+          <NavLink component={Link} to="/admin/reports" label="Reports" />
+        </>
+      )}
     </AppShell.Navbar>
     <AppShell.Main><Outlet /></AppShell.Main>
   </AppShell>;
