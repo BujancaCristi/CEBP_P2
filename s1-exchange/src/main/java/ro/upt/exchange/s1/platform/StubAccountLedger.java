@@ -3,6 +3,7 @@ package ro.upt.exchange.s1.platform;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Profile;
 import ro.upt.exchange.s1.domain.AccountRepository;
 import ro.upt.exchange.s1.domain.Order;
 import ro.upt.exchange.s1.domain.OrderRepository;
@@ -20,6 +21,7 @@ import java.math.BigDecimal;
  * with none of the platform concerns (ledger history, audit, FROZEN handling beyond the WHERE).
  */
 @Service
+@Profile({"local", "test"})
 // Always inside the caller's transaction. Insufficient* are business outcomes the caller handles
 // (reject the order, cancel the remainder), so they must NOT mark the transaction rollback-only.
 @Transactional(propagation = Propagation.MANDATORY,
