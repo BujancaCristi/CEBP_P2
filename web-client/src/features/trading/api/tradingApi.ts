@@ -1,4 +1,6 @@
 import { S1_BASE_URL } from '../integration';
+import { MOCK_DATA } from '@/app/mock';
+import { mockBook, mockOffers, mockTrades, mockMyOrders } from '../mock';
 import type {
   Book,
   BuyOfferRequest,
@@ -69,13 +71,16 @@ function isRejectedOrder(body: unknown): body is Order {
 /** All calls of contracts/s1/trading.yaml. `token` comes from Cezar's useAuth(). */
 export const tradingApi = {
   book: (token: string | null, symbol: string, depth = 10) =>
-    request<Book>(token, 'GET', `/api/stocks/${encodeURIComponent(symbol)}/book?depth=${depth}`),
+    MOCK_DATA ? Promise.resolve(mockBook(symbol, depth))
+      : request<Book>(token, 'GET', `/api/stocks/${encodeURIComponent(symbol)}/book?depth=${depth}`),
 
   offers: (token: string | null, symbol: string) =>
-    request<Offer[]>(token, 'GET', `/api/offers?symbol=${encodeURIComponent(symbol)}`),
+    MOCK_DATA ? Promise.resolve(mockOffers(symbol))
+      : request<Offer[]>(token, 'GET', `/api/offers?symbol=${encodeURIComponent(symbol)}`),
 
   recentTrades: (token: string | null, symbol: string, limit = 20) =>
-    request<Trade[]>(token, 'GET', `/api/trades?symbol=${encodeURIComponent(symbol)}&limit=${limit}`),
+    MOCK_DATA ? Promise.resolve(mockTrades(symbol).slice(0, limit))
+      : request<Trade[]>(token, 'GET', `/api/trades?symbol=${encodeURIComponent(symbol)}&limit=${limit}`),
 
   /**
    * 202 → the PENDING order. 422 → the order was stored as REJECTED and the body IS that order
@@ -100,10 +105,16 @@ export const tradingApi = {
   getOrder: (token: string | null, id: number) => request<Order>(token, 'GET', `/api/orders/${id}`),
 
   myOrders: (token: string | null, page = 0, size = 50) =>
-    request<Page<Order>>(token, 'GET', `/api/orders/mine?page=${page}&size=${size}`),
+    MOCK_DATA ? Promise.resolve({
+      content: mockMyOrders().slice(page * size, (page + 1) * size),
+      page, size, totalElements: mockMyOrders().length, totalPages: 1,
+    }) : request<Page<Order>>(token, 'GET', `/api/orders/mine?page=${page}&size=${size}`),
 
   myTrades: (token: string | null, page = 0, size = 50) =>
-    request<Page<Trade>>(token, 'GET', `/api/trades/mine?page=${page}&size=${size}`),
+    MOCK_DATA ? Promise.resolve({
+      content: mockTrades('ACME').slice(page * size, (page + 1) * size),
+      page, size, totalElements: 12, totalPages: 1,
+    }) : request<Page<Trade>>(token, 'GET', `/api/trades/mine?page=${page}&size=${size}`),
 
   buyOffer: (token: string | null, orderId: number, req: BuyOfferRequest) =>
     request<BuyOfferResponse>(token, 'POST', `/api/offers/${orderId}/buy`, req),
