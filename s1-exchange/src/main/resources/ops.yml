@@ -1,3 +1,5 @@
-# Ops (owner: Paul): bot settings and incidents. No tunables yet; limits live in BotConfigService.
-exchange:
-  ops: {}
+# S1 Ops (Bot settings, incidents) configuration. Owner: Paul.
+spring:
+  application:
+    ops:
+      enabled: true

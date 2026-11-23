@@ -1,166 +1,242 @@
 openapi: 3.1.0
 info:
-  title: S1 Exchange core - Ops (bot settings, incidents) and realtime
+  title: S1 Exchange core - Ops and Realtime
   version: 1.0.0
   description: |
-    Bot settings and incidents. **Owner: Paul.** Joined with `trading.yaml` and `platform.yaml`.
+    Bot settings, incidents, and STOMP destinations. **Owner: Paul.**
 
-    ### STOMP destinations (WebSocket at `/ws`)
-    Connect with the native header `Authorization: Bearer <JWT>` to receive `/user/queue/*`.
-    Payloads are the event payloads from `contracts/events/schemas`.
+    Joined with `platform.yaml` (Cezar) and `trading.yaml` (Patric) by `npx @redocly/cli join`
+    for the Prism mock; at runtime springdoc publishes the combined spec at `/v3/api-docs`.
 
-    | Destination | Payload | Who |
-    |---|---|---|
-    | `/topic/prices` and `/topic/prices/{symbol}` | PriceUpdated | anyone connected |
-    | `/topic/book/{symbol}` | Book (same as `GET /api/stocks/{symbol}/book`) | anyone connected |
-    | `/topic/trades/{symbol}` | TradeExecuted | anyone connected |
-    | `/topic/bot-config` | BotConfigChanged | anyone connected |
-    | `/user/queue/orders` | OrderEvent, own orders only | logged in |
-    | `/user/queue/bot-config` | BotConfigChanged, own settings only | the market maker |
+    ### STOMP Destinations (/ws)
+    * `/topic/prices/{symbol}` - `PriceUpdatedPayload` (broadcast on every trade / price change)
+    * `/topic/book/{symbol}` - `BookSnapshot` (broadcast on book order level changes)
+    * `/topic/trades/{symbol}` - `TradeExecutedPayload` (broadcast on execution)
+    * `/user/queue/orders` - `OrderEventPayload` (sent to order owner upon placement, fills, cancel, reject)
+    * `/user/queue/bot-config` - `BotConfigChangedPayload` (sent to bot upon admin update)
+
 servers:
   - url: http://localhost:8081
+    description: S1 directly (docker compose)
   - url: /api/s1
+    description: through the web-client nginx proxy
+tags:
+  - name: Bots
+    description: Market maker bot configurations (ADMIN, MARKET_MAKER)
+  - name: Incidents
+    description: Incidents recording and administrative resolution (ADMIN)
 security:
   - bearerAuth: []
-tags:
-  - { name: Bots, description: The market maker's own settings }
-  - { name: Admin, description: Bot settings and incidents for admins }
 
 paths:
   /api/bots/me/configs:
     get:
       tags: [Bots]
-      operationId: myBotConfigs
-      summary: The calling market maker's settings (MARKET_MAKER)
+      operationId: getMyBotConfigs
+      summary: The market maker bot's own settings for all stocks
+      description: Accessible by role MARKET_MAKER. Returns settings for each stock.
       responses:
         '200':
-          description: One row per stock
+          description: List of bot configurations
           content:
             application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/BotConfig' } }
-        '403': { description: Not a market maker }
-  /api/bots/me/inventory-limit:
-    post:
-      tags: [Bots]
-      operationId: reportInventoryLimit
-      summary: The bot reports it reached max inventory; S1 records a BOT_INVENTORY_LIMIT incident (MARKET_MAKER)
-      parameters:
-        - { name: symbol, in: query, required: true, schema: { type: string } }
-        - { name: inventory, in: query, required: true, schema: { type: integer } }
-        - { name: maxInventory, in: query, required: true, schema: { type: integer } }
-      responses:
-        '202':
-          description: Incident recorded
-          content:
-            application/json:
-              schema: { type: object, properties: { incidentId: { type: integer } } }
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/BotConfigResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /api/admin/bots:
     get:
-      tags: [Admin]
-      operationId: adminBots
-      summary: All bot settings (ADMIN)
+      tags: [Bots]
+      operationId: listAdminBotConfigs
+      summary: View all bot settings
+      description: Accessible by role ADMIN. Returns settings for all stocks.
       responses:
         '200':
-          description: Settings, by symbol
+          description: List of bot configurations
           content:
             application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/BotConfig' } }
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/BotConfigResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
   /api/admin/bots/{id}:
     parameters:
-      - { name: id, in: path, required: true, schema: { type: integer } }
-    get:
-      tags: [Admin]
-      operationId: adminBot
-      summary: One bot setting (ADMIN)
-      responses:
-        '200': { description: The setting, content: { application/json: { schema: { $ref: '#/components/schemas/BotConfig' } } } }
-        '404': { description: Unknown id }
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
     put:
-      tags: [Admin]
-      operationId: updateBot
-      summary: Change bot settings (ADMIN). Publishes BotConfigChanged to exchange.bots and /user/queue/bot-config.
-      description: Every field is optional; omitted fields keep their value. This is how report recommendations get applied.
+      tags: [Bots]
+      operationId: updateBotConfig
+      summary: Update bot settings for a stock
+      description: |
+        Accessible by role ADMIN. Updates parameters such as spread, quote quantity, max inventory,
+        skew factor, refresh interval, and enabled status.
+        Publishes `BotConfigChanged` event to Kafka topic `exchange.bots` and live push over `/user/queue/bot-config`.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: '#/components/schemas/BotConfigUpdate' }
-            example: { spreadBps: 75 }
-      responses:
-        '200': { description: The updated setting, content: { application/json: { schema: { $ref: '#/components/schemas/BotConfig' } } } }
-        '400': { description: Value out of range (problem details, code VALIDATION) }
-  /api/admin/incidents:
-    get:
-      tags: [Admin]
-      operationId: adminIncidents
-      summary: Incidents, newest first (ADMIN)
-      parameters:
-        - { name: status, in: query, schema: { $ref: '#/components/schemas/IncidentStatus' } }
-        - { name: type, in: query, schema: { type: string } }
-        - { name: limit, in: query, schema: { type: integer, default: 200, maximum: 1000 } }
+            schema: { $ref: '#/components/schemas/UpdateBotConfigRequest' }
       responses:
         '200':
-          description: Incidents
+          description: Updated configuration
           content:
             application/json:
-              schema: { type: array, items: { $ref: '#/components/schemas/Incident' } }
-  /api/admin/incidents/{id}:
-    patch:
-      tags: [Admin]
-      operationId: changeIncident
-      summary: Acknowledge or resolve an incident (ADMIN). Publishes IncidentUpdated.
+              schema: { $ref: '#/components/schemas/BotConfigResponse' }
+        '400': { $ref: '#/components/responses/Validation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/admin/incidents:
+    get:
+      tags: [Incidents]
+      operationId: listIncidents
+      summary: List incidents with pagination and optional filters
+      description: Accessible by role ADMIN.
       parameters:
-        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: status, in: query, required: false, schema: { $ref: '#/components/schemas/IncidentStatus' } }
+        - { name: type, in: query, required: false, schema: { $ref: '#/components/schemas/IncidentType' } }
+        - { name: page, in: query, schema: { type: integer, minimum: 0, default: 0 } }
+        - { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: Page of incidents
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IncidentPage' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/incidents/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    patch:
+      tags: [Incidents]
+      operationId: updateIncidentStatus
+      summary: Mark incident acknowledged or resolved
+      description: Accessible by role ADMIN. Publishes `IncidentUpdated` event to Kafka topic `exchange.incidents`.
       requestBody:
         required: true
         content:
           application/json:
-            schema: { type: object, required: [status], properties: { status: { $ref: '#/components/schemas/IncidentStatus' } } }
+            schema: { $ref: '#/components/schemas/UpdateIncidentStatusRequest' }
       responses:
-        '200': { description: The incident, content: { application/json: { schema: { $ref: '#/components/schemas/Incident' } } } }
-        '404': { description: Unknown id }
+        '200':
+          description: Updated incident
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IncidentResponse' }
+        '400': { $ref: '#/components/responses/Validation' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  responses:
+    Validation:
+      description: VALIDATION - bad input
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Forbidden:
+      description: Role not allowed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    NotFound:
+      description: NOT_FOUND
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
   schemas:
-    BotConfig:
+    IncidentType:
+      type: string
+      enum: [ORDER_REJECTED, INSUFFICIENT_FUNDS, INSUFFICIENT_SHARES, CONCURRENCY_CONFLICT, PRICE_SPIKE, BOT_INVENTORY_LIMIT, EVENT_PUBLISH_FAILED]
+    IncidentSeverity:
+      type: string
+      enum: [LOW, MEDIUM, HIGH]
+    IncidentStatus:
+      type: string
+      enum: [OPEN, ACKNOWLEDGED, RESOLVED]
+
+    BotConfigResponse:
       type: object
-      required: [configId, botUserId, symbol, enabled, spreadBps, quoteQty, maxInventory, skewFactor, refreshMs, updatedBy, updatedAt, version]
+      required: [id, botUserId, symbol, enabled, spreadBps, quoteQty, maxInventory, skewFactor, refreshMs, updatedAt, version]
       properties:
-        configId: { type: integer }
-        botUserId: { type: integer }
+        id: { type: integer, format: int64 }
+        botUserId: { type: integer, format: int64 }
+        stockId: { type: integer, format: int64 }
         symbol: { type: string }
         enabled: { type: boolean }
-        spreadBps: { type: integer, minimum: 1, maximum: 2000 }
-        quoteQty: { type: integer, minimum: 1 }
-        maxInventory: { type: integer, minimum: 1 }
-        skewFactor: { type: number, minimum: 0, maximum: 1 }
-        refreshMs: { type: integer, minimum: 250 }
+        spreadBps: { type: integer, minimum: 1, maximum: 1000 }
+        quoteQty: { type: integer, format: int64, minimum: 1 }
+        maxInventory: { type: integer, format: int64, minimum: 1 }
+        skewFactor: { type: number }
+        refreshMs: { type: integer, minimum: 200 }
         updatedBy: { type: string }
         updatedAt: { type: string, format: date-time }
-        version: { type: integer }
-    BotConfigUpdate:
+        version: { type: integer, format: int64 }
+
+    UpdateBotConfigRequest:
       type: object
-      description: quoteQty may not exceed maxInventory after the change.
       properties:
         enabled: { type: boolean }
-        spreadBps: { type: integer, minimum: 1, maximum: 2000 }
-        quoteQty: { type: integer, minimum: 1 }
-        maxInventory: { type: integer, minimum: 1 }
-        skewFactor: { type: number, minimum: 0, maximum: 1 }
-        refreshMs: { type: integer, minimum: 250 }
-    IncidentStatus: { type: string, enum: [OPEN, ACKNOWLEDGED, RESOLVED] }
-    Incident:
+        spreadBps: { type: integer, minimum: 1, maximum: 1000 }
+        quoteQty: { type: integer, format: int64, minimum: 1 }
+        maxInventory: { type: integer, format: int64, minimum: 1 }
+        skewFactor: { type: number }
+        refreshMs: { type: integer, minimum: 200 }
+
+    IncidentResponse:
       type: object
-      required: [incidentId, type, severity, message, status, createdAt]
+      required: [id, type, severity, message, status, createdAt]
       properties:
-        incidentId: { type: integer }
-        type: { type: string, enum: [ORDER_REJECTED, INSUFFICIENT_FUNDS, INSUFFICIENT_SHARES, CONCURRENCY_CONFLICT, PRICE_SPIKE, BOT_INVENTORY_LIMIT, EVENT_PUBLISH_FAILED] }
-        severity: { type: string, enum: [LOW, MEDIUM, HIGH] }
+        id: { type: integer, format: int64 }
+        type: { $ref: '#/components/schemas/IncidentType' }
+        severity: { $ref: '#/components/schemas/IncidentSeverity' }
+        stockId: { type: [integer, 'null'], format: int64 }
         symbol: { type: [string, 'null'] }
-        orderId: { type: [integer, 'null'] }
-        userId: { type: [integer, 'null'] }
+        orderId: { type: [integer, 'null'], format: int64 }
+        userId: { type: [integer, 'null'], format: int64 }
         message: { type: string }
+        details: { type: object }
         status: { $ref: '#/components/schemas/IncidentStatus' }
         createdAt: { type: string, format: date-time }
+        resolvedAt: { type: [string, 'null'], format: date-time }
+
+    UpdateIncidentStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status: { $ref: '#/components/schemas/IncidentStatus' }
+
+    IncidentPage:
+      type: object
+      required: [content, page, size, totalElements, totalPages]
+      properties:
+        content: { type: array, items: { $ref: '#/components/schemas/IncidentResponse' } }
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer }
+        error: { type: string }
+        message: { type: string }
+        path: { type: string }

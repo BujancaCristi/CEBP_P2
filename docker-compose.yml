@@ -72,6 +72,7 @@ services:
     build: ./mcp-server
     depends_on: [mailpit]
     environment:
+      MCP_PORT: 8083
       S2_URL: http://s2-insights:8082
       SERVICE_API_KEY: ${SERVICE_API_KEY:?SERVICE_API_KEY is required}
       MAIL_HOST: mailpit
@@ -95,7 +96,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       SERVICE_API_KEY: ${SERVICE_API_KEY:?SERVICE_API_KEY is required}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-missing}
-      MCP_CLIENT_ENABLED: "true"
+      MCP_CLIENT_ENABLED: ${MCP_CLIENT_ENABLED:-true}
       MCP_URL: http://mcp-server:8083
     ports: ["8082:8082"]
     restart: on-failure
@@ -108,7 +109,7 @@ services:
       S1_URL: http://s1-exchange:8081
       MM_USERNAME: ${MM_USERNAME:-market-maker}
       MM_PASSWORD: ${MM_PASSWORD:-bot-password}
-      MM_AUTOSTART: "true"
+      MM_AUTOSTART: ${MM_AUTOSTART:-true}
     restart: on-failure
 
   web-client:

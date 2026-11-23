@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ro.upt.exchange.s1.domain.*;
 
 import java.math.BigDecimal;
@@ -58,6 +59,13 @@ public class PlatformController {
     @GetMapping("/stocks")
     public List<Stock> stocks() {
         return stocks.findByActiveTrueOrderBySymbol();
+    }
+
+    /** One stock (Application_Description section 5); the market maker reads its last price from here. */
+    @GetMapping("/stocks/{symbol}")
+    public Stock stock(@PathVariable String symbol) {
+        return stocks.findBySymbolIgnoreCase(symbol)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown stock " + symbol));
     }
 
     @GetMapping("/portfolio")

@@ -31,9 +31,8 @@ public class JwtSecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // /ws: the STOMP handshake; the JWT is checked on the CONNECT frame (realtime/StompConfig)
-                        .requestMatchers("/api/auth/**", "/ws", "/ws/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
-                                "/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                        .requestMatchers("/api/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
+                                "/actuator/health", "/actuator/health/**", "/actuator/info", "/error").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

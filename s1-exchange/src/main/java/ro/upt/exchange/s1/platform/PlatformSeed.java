@@ -5,8 +5,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.core.annotation.Order;
+import org.springframework.transaction.support.TransactionTemplate;
+import ro.upt.exchange.s1.config.ExchangeTopics;
 import ro.upt.exchange.s1.domain.*;
-import ro.upt.exchange.s1.ops.BotConfigService;
+import ro.upt.exchange.s1.events.BotConfigChangedPayload;
+import ro.upt.exchange.s1.events.EventTypes;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -37,12 +41,14 @@ public class PlatformSeed {
     static final long TRADER_SHARES = 300;
     static final BigDecimal BOT_CASH = new BigDecimal("2000000.00");
 
+    /** Runs before ops/BotConfigSeed (order 100), which then finds the bot configs already there. */
     @Bean
     @Profile({"local", "demo"})
+    @Order(10)
     CommandLineRunner seedPlatform(UserRepository users, AccountRepository accounts, CompanyRepository companies,
                                    StockRepository stocks, PortfolioRepository portfolios, BotConfigRepository botConfigs,
-                                   BotConfigService botConfigService, PasswordEncoder passwords,
-                                   PlatformProperties properties) {
+                                   EventOutbox outbox, ExchangeTopics topics, TransactionTemplate tx,
+                                   PasswordEncoder passwords, PlatformProperties properties) {
         return args -> {
             if (users.count() > 0) return;
             User admin = users.save(new User("admin", "admin@example.com", passwords.encode("admin-password"), Role.ADMIN));
@@ -68,8 +74,15 @@ public class PlatformSeed {
                 // spread 50 bps, 20 shares per quote, inventory cap 10 000 shares
                 botConfigs.save(new BotConfig(bot.getId(), stock.getId(), 50, 20, 10_000));
             }
-            // so S2 (and the nightly report) know the bot's settings from the first minute
-            botConfigService.publishAll("seed");
+            // Publish BotConfigChanged once so S2 (and the nightly report) know the settings from the first minute.
+            tx.executeWithoutResult(status -> {
+                for (BotConfig c : botConfigs.findAll()) {
+                    String symbol = stocks.findById(c.getStockId()).map(Stock::getSymbol).orElseThrow();
+                    outbox.add(topics.bots(), symbol, EventTypes.BOT_CONFIG_CHANGED, new BotConfigChangedPayload(
+                            c.getId(), c.getBotUserId(), symbol, c.isEnabled(), c.getSpreadBps(), c.getQuoteQty(),
+                            c.getMaxInventory(), c.getSkewFactor(), c.getRefreshMs(), "seed", c.getUpdatedAt()));
+                }
+            });
         };
     }
 

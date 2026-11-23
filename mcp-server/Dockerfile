@@ -16,6 +16,6 @@ COPY --from=build /build/target/mcp-server-*.jar app.jar
 USER app
 EXPOSE 8083
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
-HEALTHCHECK --interval=10s --timeout=3s --start-period=40s --retries=10 \
-  CMD wget -qO- http://localhost:8083/actuator/health || exit 1
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=10 \
+  CMD wget -qO- http://localhost:8083/actuator/health/readiness || exit 1
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

@@ -1,6 +1,5 @@
-# Realtime (owner: Paul): STOMP over WebSocket at /ws with a simple in-memory broker.
-# Destinations: /topic/prices[/{symbol}], /topic/book/{symbol}, /topic/trades/{symbol},
-# /topic/bot-config, /user/queue/orders, /user/queue/bot-config (see contracts/s1/ops.yaml).
-exchange:
-  realtime:
-    endpoint: /ws
+# S1 Realtime (WebSocket / STOMP) configuration. Owner: Paul.
+spring:
+  websocket:
+    stomp:
+      endpoint: /ws

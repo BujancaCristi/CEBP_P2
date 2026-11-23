@@ -12,9 +12,8 @@ Docker Compose 5.8.0 or Docker Desktop with the Compose plugin is required.
 
 The web application is available at `http://localhost`, S1 Swagger at
 `http://localhost:8081/swagger-ui.html`, S2 Swagger at
-`http://localhost:8082/swagger-ui.html`, and Mailpit at `http://localhost:8025`.
-
-Kafka UI is available at `http://localhost:8080`.
+`http://localhost:8082/swagger-ui.html`, Mailpit at `http://localhost:8025`,
+MCP Server at `http://localhost:8083/mcp`, and Kafka UI at `http://localhost:8080`.
 
 The seeded `local` profile accounts are:
 
@@ -42,6 +41,12 @@ The Cezar platform slice now includes:
 - Vite/React application shell, authentication context, STOMP hook, and nginx routing
 - Login/register, market, portfolio, and account-history placeholders
 - Docker Compose, `.env.example`, Nginx proxy configuration, and CI workflow
+- S1 ops: bot settings (`/api/admin/bots`) and incident management (`/api/admin/incidents`)
+- S1 realtime: `/ws` STOMP WebSocket broker and live event publishing
+- Market Maker bot (`market-maker/`): automated quoting engine and Spring Shell CLI
+- MCP Server (`mcp-server/`): 7 MCP tools on port 8083 and email reporting
+- React Admin UI: Bot Settings and Incidents management pages
+- Contracts: `contracts/s1/ops.yaml` and `contracts/mcp-tools.md`
 
 S1 and S2 can be rebuilt independently:
 
@@ -89,8 +94,7 @@ The React shell is currently present, but not every screen is fully populated:
 My Orders and My Trades are platform-route placeholders until their trading API displays are
 completed and connected.
 
-S2 starts with MCP client integration disabled in Docker Compose until Paul's MCP server is
-running. This allows insights and its REST service to start independently.
+S2 starts with MCP client integration enabled connecting to the MCP server on port 8083.
 
 ## Demo/mock data mode
 

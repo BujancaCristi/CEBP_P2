@@ -15,10 +15,23 @@ export type Me = {
 };
 
 export const platformApi = {
-  login: (body: { username: string; password: string }) =>
-    request<AuthResponse>(`${base}/api/auth/login`, { method: 'POST', body: JSON.stringify(body) }),
-  register: (body: { username: string; email: string; password: string }) =>
-    request<AuthResponse>(`${base}/api/auth/register`, { method: 'POST', body: JSON.stringify(body) }),
+  // In mock mode any login works; a username containing "admin" gets the ADMIN role (from Paul's branch).
+  login: (body: { username: string; password: string }): Promise<AuthResponse> => {
+    if (MOCK_DATA) {
+      const isAdmin = !body.username || body.username.toLowerCase().includes('admin');
+      const username = body.username || 'admin';
+      return Promise.resolve({ token: 'mock-jwt-token', accountId: isAdmin ? 1 : 2,
+        user: { id: isAdmin ? 1 : 2, username, email: `${username}@example.com`, role: isAdmin ? 'ADMIN' : 'TRADER' } });
+    }
+    return request<AuthResponse>(`${base}/api/auth/login`, { method: 'POST', body: JSON.stringify(body) });
+  },
+  register: (body: { username: string; email: string; password: string }): Promise<AuthResponse> => {
+    if (MOCK_DATA) {
+      return Promise.resolve({ token: 'mock-jwt-token', accountId: 3,
+        user: { id: 3, username: body.username, email: body.email, role: 'TRADER' } });
+    }
+    return request<AuthResponse>(`${base}/api/auth/register`, { method: 'POST', body: JSON.stringify(body) });
+  },
 
   me: (token: string | null): Promise<Me> => MOCK_DATA
     ? Promise.resolve({

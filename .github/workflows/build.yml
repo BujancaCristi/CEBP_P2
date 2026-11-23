@@ -20,6 +20,22 @@ jobs:
         with: { distribution: temurin, java-version: '21', cache: maven }
       - run: mvn -B test
         working-directory: s2-insights
+  mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - run: mvn -B test
+        working-directory: mcp-server
+  market-maker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - run: mvn -B test
+        working-directory: market-maker
   web:
     runs-on: ubuntu-latest
     steps:

@@ -1,4 +1,4 @@
-# Market maker. Multi-stage: Maven build -> JRE 21 runtime. Headless: no port.
+# Market Maker bot. Multi-stage: Maven build -> JRE 21 runtime.
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /build
 COPY pom.xml .
