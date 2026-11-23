@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { insightsApi, insightsKeys } from '../api/insightsApi';
 import { useAuth } from '../integration';
+import { PageHeader } from '@/app/PageHeader';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const num = (v: number | null, d = 2) => (v == null ? '-' : v.toFixed(d));
@@ -19,10 +20,8 @@ export function StatisticsPage() {
 
   return (
     <Container size="lg" py="md">
-      <Group justify="space-between" mb="md">
-        <Title order={3}>Statistics</Title>
-        <TextInput type="date" value={date} onChange={(e) => setDate(e.currentTarget.value)} />
-      </Group>
+      <PageHeader title="Statistics" subtitle="Daily figures per stock, from the insights service" color="blue"
+        right={<TextInput type="date" value={date} onChange={(e) => setDate(e.currentTarget.value)} />} />
       {isLoading && <Skeleton height={200} />}
       {error && <Text c="red">Could not load statistics</Text>}
       {data && (

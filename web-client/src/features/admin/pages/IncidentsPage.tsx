@@ -2,6 +2,7 @@ import { Badge, Button, Container, Group, Select, Table, Text, Title } from '@ma
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useAuth } from '@/app/auth';
+import { PageHeader } from '@/app/PageHeader';
 import { adminApi, type IncidentStatus } from '../api';
 
 const TYPES = ['ORDER_REJECTED', 'INSUFFICIENT_FUNDS', 'INSUFFICIENT_SHARES', 'CONCURRENCY_CONFLICT', 'PRICE_SPIKE',
@@ -26,7 +27,7 @@ export function IncidentsPage() {
 
   return (
     <Container size="xl" py="md">
-      <Title order={2} mb="md">Incidents</Title>
+      <PageHeader title="Incidents" subtitle="Things that went wrong, newest first" color="orange" />
       <Group mb="sm">
         <Select label="Status" w={180} clearable value={status} onChange={setStatus} data={['OPEN', 'ACKNOWLEDGED', 'RESOLVED']} />
         <Select label="Type" w={240} clearable value={type} onChange={setType} data={TYPES} />

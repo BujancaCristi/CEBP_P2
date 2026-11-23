@@ -17,7 +17,7 @@ public class McpServerApplication {
     }
 
     @Bean
-    ToolCallbackProvider exchangeTools(ExchangeTools tools) {
+    ToolCallbackProvider exchangeToolCallbacks(ExchangeTools tools) {
         return MethodToolCallbackProvider.builder().toolObjects(tools).build();
     }
 }

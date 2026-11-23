@@ -36,7 +36,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
-    healthcheck: { test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null"], interval: 10s, timeout: 5s, retries: 12 }
+    # The check starts a JVM CLI, which can take over 10 s on a busy laptop; a short timeout marks a healthy broker unhealthy.
+    healthcheck: { test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null"], interval: 15s, timeout: 30s, retries: 10, start_period: 60s }
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest

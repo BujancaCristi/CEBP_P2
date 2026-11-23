@@ -6,6 +6,8 @@ import { Link, Navigate, Outlet, RouterProvider, createBrowserRouter, useLocatio
 import { AuthProvider, useAuth, type AuthUser } from './auth';
 import { disconnectStomp } from './stomp';
 import { MOCK_DATA } from './mock';
+import { BRAND, theme } from './brand';
+import { Logo } from './Logo';
 import { LoginPage, RegisterPage } from '@/features/platform';
 import { platformRoutes } from '@/features/platform/routes';
 import { tradingRoutes } from '@/features/trading/routes';
@@ -65,29 +67,41 @@ function ProtectedLayout() {
     );
   }
   const adminOnly = location.pathname.startsWith('/admin') && user.role !== 'ADMIN';
+  const navItem = (m: MenuItem, color: string) => (
+    <NavLink key={m.to} component={Link} to={m.to} label={m.label} onClick={close} variant="filled" color={color}
+      style={{ borderRadius: 8, marginBottom: 2 }} fw={500}
+      active={m.to === '/' ? location.pathname === '/' : location.pathname.startsWith(m.to)} />
+  );
+
+  const items = MENU.filter((m) => m.roles.includes(user.role));
+  const roleColor = user.role === 'ADMIN' ? 'grape' : 'teal';
 
   return (
-    <AppShell header={{ height: 56 }} navbar={{ width: 220, breakpoint: 'sm', collapsed: { mobile: !opened } }} padding="md">
-      <AppShell.Header>
+    <AppShell header={{ height: 60 }} navbar={{ width: 230, breakpoint: 'sm', collapsed: { mobile: !opened } }} padding="md">
+      <AppShell.Header style={{ backgroundImage: 'linear-gradient(120deg, var(--mantine-color-indigo-8), var(--mantine-color-cyan-6))', border: 0 }}>
         <Group justify="space-between" px="md" h="100%">
-          <Group gap="xs">
-            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-            <Text fw={700}>CEBP Exchange</Text>
-            {MOCK_DATA && <Badge color="yellow">demo data</Badge>}
+          <Group gap="sm">
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" color="white" />
+            <Logo />
+            <Text fw={800} c="white" size="lg" visibleFrom="xs">{BRAND.name}</Text>
+            {MOCK_DATA && <Badge color="yellow" variant="filled">demo data</Badge>}
           </Group>
           <Group gap="sm">
-            <Text size="sm">{user.username} <Badge size="xs" variant="light">{user.role}</Badge></Text>
-            <Button size="xs" variant="subtle" onClick={() => { disconnectStomp(); queryClient.clear(); logout(); }}>Sign out</Button>
+            <Text size="sm" c="white" fw={500} visibleFrom="xs">{user.username}</Text>
+            <Badge color={roleColor} variant="filled" size="sm">{user.role}</Badge>
+            <Button size="xs" variant="white" color="indigo" onClick={() => { disconnectStomp(); queryClient.clear(); logout(); }}>Sign out</Button>
           </Group>
         </Group>
       </AppShell.Header>
-      <AppShell.Navbar p="xs">
-        {MENU.filter((m) => m.roles.includes(user.role)).map((m) => (
-          <NavLink key={m.to} component={Link} to={m.to} label={m.label} onClick={close}
-            active={m.to === '/' ? location.pathname === '/' : location.pathname.startsWith(m.to)} />
-        ))}
+      <AppShell.Navbar p="sm" style={{ background: 'var(--mantine-color-indigo-0)' }}>
+        <Text size="xs" fw={700} c="indigo.7" tt="uppercase" mb={4} px="xs">Trading</Text>
+        {items.filter((m) => !m.to.startsWith('/admin')).map((m) => navItem(m, 'indigo'))}
+        {items.some((m) => m.to.startsWith('/admin')) && (
+          <Text size="xs" fw={700} c="grape.7" tt="uppercase" mt="md" mb={4} px="xs">Admin</Text>
+        )}
+        {items.filter((m) => m.to.startsWith('/admin')).map((m) => navItem(m, 'grape'))}
       </AppShell.Navbar>
-      <AppShell.Main>
+      <AppShell.Main bg="gray.0">
         {adminOnly ? <Container py="xl"><Title order={3}>Not allowed for your role</Title></Container> : <Outlet />}
       </AppShell.Main>
     </AppShell>
@@ -96,7 +110,7 @@ function ProtectedLayout() {
 
 export function App() {
   return (
-    <MantineProvider defaultColorScheme="auto">
+    <MantineProvider theme={theme} defaultColorScheme="light">
       <QueryClientProvider client={queryClient}>
         <AuthProvider><RouterProvider router={router} /></AuthProvider>
       </QueryClientProvider>

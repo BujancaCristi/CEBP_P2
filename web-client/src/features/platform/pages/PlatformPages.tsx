@@ -11,6 +11,7 @@ import { tradingApi, tradingKeys } from '@/features/trading/api/tradingApi';
 import type { Order, PriceUpdatedEvent } from '@/features/trading/types';
 import { MarketMovers } from '@/features/insights';
 import { platformApi } from '../api';
+import { PageHeader, StatCard } from '@/app/PageHeader';
 
 const eur = (v: number) => v.toLocaleString(undefined, { style: 'currency', currency: 'EUR' });
 const pct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
@@ -40,17 +41,25 @@ export function MarketPage() {
   const [filter, setFilter] = useState('');
   const names = useMemo(() => Object.fromEntries((companies.data ?? []).map((c) => [c.id, c.name])), [companies.data]);
 
+  const changeOf = (s: { symbol: string; value: number; previousClose: number }) =>
+    ((priceOf(s.symbol, Number(s.value)) - Number(s.previousClose)) / Number(s.previousClose)) * 100;
+  const up = (stocks.data ?? []).filter((s) => changeOf(s) > 0).length;
+  const down = (stocks.data ?? []).filter((s) => changeOf(s) < 0).length;
   const rows = (stocks.data ?? []).filter((s) =>
     `${s.symbol} ${names[s.companyId] ?? ''}`.toLowerCase().includes(filter.toLowerCase()));
 
   return (
     <Container size="xl" py="md">
-      <Group justify="space-between" mb="md"><Title order={2}>Market</Title><DemoBadge /></Group>
+      <PageHeader title="Market" subtitle="Live prices, updated as trades happen" color="indigo"
+        right={<Group gap="xs"><DemoBadge />
+          <Badge size="lg" color="teal" variant="white">{up} up</Badge>
+          <Badge size="lg" color="red" variant="white">{down} down</Badge></Group>} />
       <Grid>
         <Grid.Col span={{ base: 12, md: 8 }}>
           <TextInput placeholder="Filter by symbol or company" value={filter} onChange={(e) => setFilter(e.currentTarget.value)} mb="sm" />
           {stocks.isLoading && <Text c="dimmed">Loading stocks...</Text>}
           {stocks.error && <Text c="red">Could not load stocks: {(stocks.error as Error).message}</Text>}
+          <Paper radius="md" shadow="xs" p="xs">
           <Table striped highlightOnHover>
             <Table.Thead><Table.Tr>
               <Table.Th>Symbol</Table.Th><Table.Th>Company</Table.Th><Table.Th ta="right">Last</Table.Th>
@@ -61,16 +70,17 @@ export function MarketPage() {
               const change = ((last - Number(s.previousClose)) / Number(s.previousClose)) * 100;
               return (
                 <Table.Tr key={s.symbol}>
-                  <Table.Td fw={600}><Link to={`/stocks/${s.symbol}`}>{s.symbol}</Link></Table.Td>
+                  <Table.Td><Badge component={Link} to={`/stocks/${s.symbol}`} variant="gradient" gradient={{ from: 'indigo', to: 'cyan' }} style={{ cursor: 'pointer' }}>{s.symbol}</Badge></Table.Td>
                   <Table.Td>{names[s.companyId] ?? ''}</Table.Td>
                   <Table.Td ta="right">{last.toFixed(2)}</Table.Td>
                   <Table.Td ta="right">{Number(s.previousClose).toFixed(2)}</Table.Td>
-                  <Table.Td ta="right" c={change >= 0 ? 'teal' : 'red'}>{pct(change)}</Table.Td>
-                  <Table.Td><Button component={Link} to={`/stocks/${s.symbol}`} size="xs" variant="light">Trade</Button></Table.Td>
+                  <Table.Td ta="right"><Badge variant="light" color={change > 0 ? 'teal' : change < 0 ? 'red' : 'gray'}>{pct(change)}</Badge></Table.Td>
+                  <Table.Td><Button component={Link} to={`/stocks/${s.symbol}`} size="xs" variant="gradient" gradient={{ from: 'indigo', to: 'cyan' }}>Trade</Button></Table.Td>
                 </Table.Tr>
               );
             })}</Table.Tbody>
           </Table>
+          </Paper>
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 4 }}><MarketMovers /></Grid.Col>
       </Grid>
@@ -90,20 +100,18 @@ export function PortfolioPage() {
   const cost = positions.reduce((sum, p) => sum + p.quantity * Number(p.averageCost), 0);
   const account = me.data?.account;
 
-  const card = (label: string, value: string, color?: string) => (
-    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-      <Paper withBorder p="md"><Text c="dimmed" size="sm">{label}</Text><Title order={3} c={color}>{value}</Title></Paper>
-    </Grid.Col>
+  const card = (label: string, value: string, accent: string, valueColor?: string) => (
+    <Grid.Col span={{ base: 12, sm: 6, md: 3 }}><StatCard label={label} value={value} color={accent} valueColor={valueColor} /></Grid.Col>
   );
 
   return (
     <Container size="xl" py="md">
-      <Group justify="space-between" mb="md"><Title order={2}>Portfolio</Title><DemoBadge /></Group>
+      <PageHeader title="Portfolio" subtitle="Cash, positions and profit at the latest prices" color="teal" right={<DemoBadge />} />
       <Grid mb="md">
-        {card('Cash', account ? eur(Number(account.balance)) : '-')}
-        {card('Reserved for orders', account ? eur(Number(account.reserved)) : '-')}
-        {card('Positions value', eur(marketValue))}
-        {card('Unrealised P&L', eur(marketValue - cost), marketValue - cost >= 0 ? 'teal' : 'red')}
+        {card('Cash', account ? eur(Number(account.balance)) : '-', 'indigo')}
+        {card('Reserved for orders', account ? eur(Number(account.reserved)) : '-', 'orange')}
+        {card('Positions value', eur(marketValue), 'cyan')}
+        {card('Unrealised P&L', eur(marketValue - cost), marketValue - cost >= 0 ? 'teal' : 'red', marketValue - cost >= 0 ? 'teal' : 'red')}
       </Grid>
       {positions.length === 0 && !portfolio.isLoading && <Text c="dimmed">No positions yet. Buy something on the Market page.</Text>}
       {positions.length > 0 && (
@@ -166,7 +174,7 @@ export function OrdersPage() {
 
   return (
     <Container size="xl" py="md">
-      <Group justify="space-between" mb="md"><Title order={2}>My orders</Title><DemoBadge /></Group>
+      <PageHeader title="My orders" subtitle="Cancel or change your open orders" color="violet" right={<DemoBadge />} />
       <Select w={220} mb="sm" label="Show" value={status} onChange={setStatus}
         data={[{ value: 'ACTIVE', label: 'Active' }, { value: 'ALL', label: 'All' }, 'FILLED', 'CANCELLED', 'REJECTED']} />
       {error && <Text c="red" mb="sm">{error}</Text>}
@@ -181,11 +189,11 @@ export function OrdersPage() {
             <Table.Tr key={o.id}>
               <Table.Td>{new Date(o.createdTime).toLocaleString()}</Table.Td>
               <Table.Td fw={600}>{o.symbol}</Table.Td>
-              <Table.Td c={o.side === 'BUY' ? 'teal' : 'red'}>{o.side}</Table.Td>
+              <Table.Td><Badge color={o.side === 'BUY' ? 'teal' : 'red'}>{o.side}</Badge></Table.Td>
               <Table.Td>{o.type}</Table.Td>
               <Table.Td ta="right">{o.price != null ? Number(o.price).toFixed(2) : 'market'}</Table.Td>
               <Table.Td ta="right">{o.filledQty}/{o.qty}</Table.Td>
-              <Table.Td><Badge variant="light" color={o.status === 'FILLED' ? 'teal' : o.status === 'REJECTED' ? 'red' : 'gray'}>{o.status}</Badge>
+              <Table.Td><Badge variant="light" color={o.status === 'FILLED' ? 'teal' : o.status === 'REJECTED' ? 'red' : o.status === 'CANCELLED' ? 'gray' : 'blue'}>{o.status}</Badge>
                 {o.rejectReason && <Text size="xs" c="dimmed">{o.rejectReason}</Text>}</Table.Td>
               <Table.Td>{OPEN.has(o.status) && o.status !== 'PENDING' && (
                 <Group gap={4}>
@@ -217,7 +225,7 @@ export function TradesPage() {
   const rows = (trades.data?.content ?? []).filter((t) => !symbol || t.symbol.toLowerCase().includes(symbol.toLowerCase()));
   return (
     <Container size="xl" py="md">
-      <Group justify="space-between" mb="md"><Title order={2}>My trades</Title><DemoBadge /></Group>
+      <PageHeader title="My trades" subtitle="Everything you bought and sold" color="cyan" right={<DemoBadge />} />
       <TextInput w={220} mb="sm" placeholder="Filter by symbol" value={symbol} onChange={(e) => setSymbol(e.currentTarget.value)} />
       {rows.length === 0 && !trades.isLoading && <Text c="dimmed">No trades yet.</Text>}
       {rows.length > 0 && (
@@ -232,7 +240,7 @@ export function TradesPage() {
               <Table.Tr key={t.id}>
                 <Table.Td>{new Date(t.executedAt).toLocaleString()}</Table.Td>
                 <Table.Td fw={600}>{t.symbol}</Table.Td>
-                <Table.Td c={side === 'BUY' ? 'teal' : 'red'}>{side}</Table.Td>
+                <Table.Td><Badge color={side === 'BUY' ? 'teal' : 'red'}>{side}</Badge></Table.Td>
                 <Table.Td ta="right">{t.qty}</Table.Td>
                 <Table.Td ta="right">{Number(t.price).toFixed(2)}</Table.Td>
                 <Table.Td ta="right">{eur(Number(t.totalValue))}</Table.Td>

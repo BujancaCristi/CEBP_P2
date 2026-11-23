@@ -4,6 +4,7 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { insightsApi } from '../api/insightsApi';
 import { useAuth } from '../integration';
+import { PageHeader } from '@/app/PageHeader';
 
 const yesterday = () => new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
 
@@ -15,9 +16,7 @@ export function ReportsPage() {
 
   return (
     <Container size="md" py="md">
-      <Title order={3} mb="md">
-        Nightly report
-      </Title>
+      <PageHeader title="Nightly report" subtitle="Run the AI market report now; it is emailed and shown here" color="grape" />
       <Group mb="md">
         <TextInput type="date" value={date} onChange={(e) => setDate(e.currentTarget.value)} />
         <Button onClick={() => run.mutate()} loading={run.isPending}>

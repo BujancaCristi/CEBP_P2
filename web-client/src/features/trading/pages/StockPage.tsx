@@ -6,6 +6,8 @@ import { OrderBook } from '../components/OrderBook';
 import { OffersList } from '../components/OffersList';
 import { OrderForm } from '../components/OrderForm';
 import { fmt } from '../format';
+import { PageHeader } from '@/app/PageHeader';
+import { Badge } from '@mantine/core';
 
 /**
  * /stocks/:symbol — price chart (insights), live order book, offers with Buy, order form.
@@ -21,12 +23,8 @@ export function StockPage() {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" align="baseline">
-        <Title order={2}>{symbol}</Title>
-        <Text size="xl" fw={600}>
-          {fmt.price(lastPrice)}
-        </Text>
-      </Group>
+      <PageHeader title={symbol} subtitle="Order book, offers and order entry" color="indigo"
+        right={<Badge size="xl" variant="white" color="indigo">{fmt.price(lastPrice)}</Badge>} />
 
       {error && (
         <Alert color="red" title="Stock unavailable">

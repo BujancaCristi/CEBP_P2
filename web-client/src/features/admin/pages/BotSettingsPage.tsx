@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/app/auth';
+import { PageHeader } from '@/app/PageHeader';
 import { adminApi, type BotConfig, type BotConfigUpdate } from '../api';
 
 const keys = { bots: ['s1', 'admin', 'bots'] as const };
@@ -16,7 +17,7 @@ export function BotSettingsPage() {
 
   return (
     <Container size="xl" py="md">
-      <Title order={2} mb="md">Bot settings</Title>
+      <PageHeader title="Bot settings" subtitle="How the market maker quotes each stock" color="grape" />
       {bots.error && <Alert color="red" mb="md">{(bots.error as Error).message}</Alert>}
       {id && selected && <EditForm key={selected.configId + ':' + selected.version} config={selected} />}
       {id && bots.data && !selected && <Alert color="red" mb="md">No bot setting with id {id}.</Alert>}

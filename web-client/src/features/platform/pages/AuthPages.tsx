@@ -1,4 +1,6 @@
-import { Anchor, Button, Container, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
+import { Anchor, Box, Button, Container, Group, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
+import { BRAND } from '@/app/brand';
+import { Logo } from '@/app/Logo';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/app/auth';
@@ -38,28 +40,32 @@ function AuthForm({ register }: { register: boolean }) {
   }
 
   return (
-    <Container size={420} py={60}>
-      <Title order={2} ta="center" mb="xs">CEBP Exchange</Title>
-      <Text c="dimmed" ta="center" mb="lg">{register ? 'Create a trader account with 10 000 EUR of demo cash' : 'Sign in to trade'}</Text>
-      <Paper withBorder p="lg" component="form" onSubmit={submit}>
+    <Box mih="100vh" py={60} style={{ backgroundImage: 'linear-gradient(135deg, var(--mantine-color-indigo-9), var(--mantine-color-cyan-6))' }}>
+    <Container size={420}>
+      <Group justify="center" mb="xs"><Logo size={48} /></Group>
+      <Title order={1} ta="center" c="white">{BRAND.name}</Title>
+      <Text c="indigo.0" ta="center" mb="lg">{register ? 'Create a trader account with 10 000 EUR of play money' : BRAND.tagline}</Text>
+      <Paper p="xl" radius="lg" shadow="xl" component="form" onSubmit={submit}>
+        <Title order={3} mb="md">{register ? 'Create account' : 'Sign in'}</Title>
         <Stack>
           <TextInput label="Username" required value={username} onChange={(e) => setUsername(e.currentTarget.value)} />
           {register && <TextInput label="Email" type="email" required value={email} onChange={(e) => setEmail(e.currentTarget.value)} />}
           <PasswordInput label="Password" required value={password} onChange={(e) => setPassword(e.currentTarget.value)} />
           {register && <PasswordInput label="Confirm password" required value={confirm} onChange={(e) => setConfirm(e.currentTarget.value)} />}
           {error && <Text c="red" size="sm">{error}</Text>}
-          <Button type="submit" loading={busy}>{register ? 'Register' : 'Sign in'}</Button>
+          <Button type="submit" loading={busy} variant="gradient" gradient={BRAND.gradient} size="md">{register ? 'Register' : 'Sign in'}</Button>
           <Anchor component={Link} to={register ? '/login' : '/register'} size="sm">
             {register ? 'Already have an account? Sign in' : 'No account? Register'}
           </Anchor>
         </Stack>
       </Paper>
       {!register && (
-        <Text c="dimmed" size="xs" ta="center" mt="md">
+        <Text c="indigo.0" size="xs" ta="center" mt="md">
           Demo accounts: trader / trader-password, admin / admin-password
         </Text>
       )}
     </Container>
+    </Box>
   );
 }
 
